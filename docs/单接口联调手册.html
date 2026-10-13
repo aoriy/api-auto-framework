@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>单接口联调手册</title>
+<style>
+  :root{
+    --bg:#faf9f7; --card:#ffffff; --line:#e5e3de; --line2:#d3d1c7;
+    --t1:#2c2c2a; --t2:#5f5e5a; --t3:#888780;
+    --hi:#a32d2d; --hi-bg:#fcebeb;
+    --mid:#854f0b; --mid-bg:#faeeda;
+    --ok:#0f6e56; --ok-bg:#e1f5ee;
+    --code-bg:#f6f5f1; --code-line:#e8e6e0;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--t1);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:14px;line-height:1.75}
+  .wrap{max-width:1180px;margin:0 auto;padding:40px 28px 80px;display:grid;
+    grid-template-columns:212px minmax(0,1fr);gap:36px;align-items:start}
+  .main{min-width:0}
+  h1{font-size:24px;font-weight:600;margin:0 0 6px}
+  h2{font-size:17px;font-weight:600;margin:46px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:14.5px;font-weight:600;margin:26px 0 8px}
+  h4{font-size:13.5px;font-weight:600;margin:18px 0 6px;color:var(--t2)}
+  p{margin:9px 0}
+  a{color:#185fa5;text-decoration:none}
+  a:hover{text-decoration:underline}
+  .sub{color:var(--t2);font-size:13px;margin:0 0 4px}
+  code{font-family:var(--mono);font-size:12.5px;background:#f1efe8;padding:1px 5px;border-radius:4px}
+  pre{background:var(--code-bg);border:1px solid var(--code-line);border-radius:9px;
+    padding:13px 15px;overflow-x:auto;margin:12px 0;line-height:1.65}
+  pre code{background:none;padding:0;font-size:12.5px;white-space:pre}
+  table{width:100%;border-collapse:collapse;margin:13px 0;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#f4f3ef;font-weight:600;font-size:12.5px;color:var(--t2);white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#fbfaf8}
+  blockquote{margin:13px 0;padding:10px 15px;background:#f4f3ef;
+    border-left:3px solid var(--line2);border-radius:0 8px 8px 0;color:var(--t2);font-size:13.2px}
+  blockquote p{margin:4px 0}
+  ul,ol{margin:9px 0;padding-left:22px}
+  li{margin:4px 0}
+  hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+  .toc{position:sticky;top:28px;font-size:12.5px;max-height:calc(100vh - 60px);overflow-y:auto;
+    border-right:1px solid var(--line);padding-right:14px}
+  .toc .toc-title{font-weight:600;color:var(--t2);font-size:11.5px;letter-spacing:.06em;
+    text-transform:uppercase;margin-bottom:8px}
+  .toc ul{list-style:none;padding:0;margin:0}
+  .toc li{margin:3px 0}
+  .toc a{color:var(--t2);display:block;padding:2px 0;border-radius:4px}
+  .toc a:hover{color:var(--t1);background:#f1efe8;text-decoration:none}
+  .toc ul ul{padding-left:11px}
+  .toc ul ul a{color:var(--t3);font-size:12px}
+  footer{margin-top:60px;padding-top:16px;border-top:1px solid var(--line);color:var(--t3);font-size:12px}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr;gap:0}.toc{position:static;
+    border-right:none;border-bottom:1px solid var(--line);padding:0 0 14px;max-height:none;margin-bottom:20px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="toc">
+    <div class="toc-title">目录</div>
+    <div class="toc">
+<ul>
+<li><a href="#0">0. 结论速览</a></li>
+<li><a href="#1">1. 先回答：原来能单独验证一个接口吗？</a><ul>
+<li><a href="#11-runner">1.1 runner 的全部调度能力（实测）</a></li>
+<li><a href="#12">1.2 框架内部的粒度边界</a></li>
+<li><a href="#13">1.3 为什么这个缺口很要命</a></li>
+<li><a href="#14">1.4 补上的东西</a></li>
+</ul>
+</li>
+<li><a href="#2">2. 三种单接口测试方式</a><ul>
+<li><a href="#21-curl-postman">2.1 方式一：curl / Postman 直打</a></li>
+<li><a href="#22-toolshitpy">2.2 方式二：tools/hit.py（日常主力，推荐）</a></li>
+<li><a href="#23-suite-ci">2.3 方式三：单条目 suite（进 CI / 要留报告时用）</a></li>
+<li><a href="#24">2.4 怎么选</a></li>
+</ul>
+</li>
+<li><a href="#3-hitpy">3. hit.py 使用手册</a><ul>
+<li><a href="#31">3.1 参数总表</a></li>
+<li><a href="#32">3.2 五个典型场景（均为实测输出）</a></li>
+<li><a href="#33-ci">3.3 退出码（CI 友好）</a></li>
+<li><a href="#34">3.4 与用例调用同源</a></li>
+</ul>
+</li>
+<li><a href="#4_1">4. 验证点清单：怎么算「真正生效」</a><ul>
+<li><a href="#41-bug">4.1 五层判据（缺一层就可能放过 bug）</a></li>
+<li><a href="#42-n">4.2 权限矩阵（同一接口 × N 账号）</a></li>
+<li><a href="#43">4.3 会话隔离（凭证不串号）</a></li>
+<li><a href="#44">4.4 幂等与重复调用</a></li>
+<li><a href="#45">4.5 性能基线</a></li>
+</ul>
+</li>
+<li><a href="#5-7">5. 新增接口的联调流程（7 步）</a><ul>
+<li><a href="#1_2">步骤 1 · 探路：确认真实响应长什么样</a></li>
+<li><a href="#2_2">步骤 2 · 定路径与前缀</a></li>
+<li><a href="#3_1">步骤 3 · 写页面方法</a></li>
+<li><a href="#4_2">步骤 4 · 单接口验证（新增接口的核心环节）</a></li>
+<li><a href="#5_2">步骤 5 · 权限矩阵</a></li>
+<li><a href="#6">步骤 6 · 入用例</a></li>
+<li><a href="#7">步骤 7 · 跑整条套件回归</a></li>
+</ul>
+</li>
+<li><a href="#6_1">6. 注意事项（全部来自实测踩坑）</a><ul>
+<li><a href="#61-no-auth-authfalse">6.1 --no-auth 为什么不能用 auth=False 实现</a></li>
+<li><a href="#62-git-bash">6.2 Git Bash 会改写以 / 开头的参数</a></li>
+<li><a href="#63-prefix">6.3 prefix 三态必须分清</a></li>
+<li><a href="#64">6.4 环境与账号表是耦合的（拿错环境报的是「账号不存在」）</a></li>
+<li><a href="#65-hitpy">6.5 hit.py 不做跨步骤变量传递</a></li>
+<li><a href="#66-mock">6.6 mock 是有状态的，写接口会留脏数据</a></li>
+<li><a href="#67-401">6.7 401 自动重登只对「本来就要凭证」的账号生效</a></li>
+<li><a href="#68">6.8 单接口调通 ≠ 用例通过</a></li>
+<li><a href="#69">6.9 凭证缓存的位置与强制刷新</a></li>
+<li><a href="#610">6.10 报告里有敏感信息</a></li>
+<li><a href="#611-debug">6.11 联调期间打开 DEBUG 日志</a></li>
+</ul>
+</li>
+<li><a href="#7_1">7. 故障速查表</a></li>
+<li><a href="#a-hitpy">附录 A · hit.py 与用例写法对照</a></li>
+</ul>
+</div>
+
+  </nav>
+  <div class="main">
+  <h1>单接口联调手册</h1>
+  <p class="sub">api-auto-framework · 单接口联调手册 · 生成于 2026-10-14</p>
+<blockquote>
+<p>适用对象：要给本项目新增/接入接口的人。
+目标：让「这一个接口到底通没通」这件事，能在 10 秒内单独问出答案，而不是跑完一整条流程去猜。</p>
+</blockquote>
+<hr />
+<h2 id="0">0. 结论速览</h2>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>答案</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>项目里原本有单接口验证入口吗？</td>
+<td><strong>没有。</strong> 调度粒度是「套件 → 用例类」，没有 <code>--case</code> / <code>--only</code> / 单步骤过滤</td>
+</tr>
+<tr>
+<td>现在有吗？</td>
+<td><strong>有。</strong> 新增 <code>tools/hit.py</code>，一次只打一个接口，打印全链路信息并断言</td>
+</tr>
+<tr>
+<td>一个接口要算「真正生效」，看几个点？</td>
+<td><strong>5 个</strong>：路由存在 → 鉴权正确 → 契约一致 → 业务规则生效 → <strong>副作用落地（写后必回查）</strong></td>
+</tr>
+<tr>
+<td>最容易骗到自己的地方？</td>
+<td>只看 <code>201 Created</code> 就收工。<strong>必须再 GET 回来确认</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1">1. 先回答：原来能单独验证一个接口吗？</h2>
+<h3 id="11-runner">1.1 runner 的全部调度能力（实测）</h3>
+<p><code>python runner/main.py --help</code> 支持的参数只有这些：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+<th>能否用来「只跑某一个接口」</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--env</code></td>
+<td>选环境（<code>config/env/&lt;env&gt;.yaml</code>）</td>
+<td>✗</td>
+</tr>
+<tr>
+<td><code>--suite</code></td>
+<td>选套件（<code>suites/&lt;suite&gt;.yaml</code>）</td>
+<td>✗ 粒度是<strong>套件</strong></td>
+</tr>
+<tr>
+<td><code>--account</code> / <code>--role</code></td>
+<td><strong>预热</strong>指定账号（可重复）</td>
+<td>✗ 只影响登录，不筛选执行</td>
+</tr>
+<tr>
+<td><code>--fresh-token</code></td>
+<td>清掉凭证缓存强制重登</td>
+<td>✗</td>
+</tr>
+<tr>
+<td><code>--list-accounts</code> / <code>--list-roles</code></td>
+<td>打印账号表后退出</td>
+<td>✗</td>
+</tr>
+</tbody>
+</table>
+<p>而 <code>suites/*.yaml</code> 的结构是：</p>
+<pre><code class="language-yaml">cases:
+  - cases.all_pages_case:AllPagesFlowCase
+</code></pre>
+<p><strong>执行粒度到此为止</strong>——没法在里面写「只跑第 3 个步骤」。</p>
+<h3 id="12">1.2 框架内部的粒度边界</h3>
+<p><code>cases/base_case.py</code> 的 <code>run()</code> 是这样跑的：</p>
+<pre><code>setup_case() → test_01_* → test_02_* → ... → teardown_case()
+</code></pre>
+<ul>
+<li>步骤顺序 = 方法名<strong>字典序</strong>（所以用 <code>test_01_</code> 前缀控序）</li>
+<li>单个步骤失败<strong>不中断</strong>后续步骤（这是刻意设计，一次跑完看全貌）</li>
+<li>但<strong>没有</strong>「只执行 test_03_」的开关</li>
+</ul>
+<p>所以现状是：<strong>「一个用例类」是最小的可执行单元，而一个用例类通常是一条完整业务流程。</strong></p>
+<h3 id="13">1.3 为什么这个缺口很要命</h3>
+<p>新增接口时典型场景：</p>
+<pre><code>申请 → 专家评审 → FAE 汇总 → IPQ 审核 → ...
+        ↑ 你要验的是这一环
+</code></pre>
+<p>问题在于：</p>
+<ol>
+<li><strong>上游没通，下游根本没发出去。</strong> 你看报告是一排红，但有价值的信号只有最上面那一行，剩下全是「因为没拿到 case_id 所以没发请求」的噪声。</li>
+<li><strong>你要验的接口可能已经好了。</strong> 它依赖的上游数据在真实环境里还没造出来，但接口本身完全正常——套件跑不出来这个结论。</li>
+<li><strong>改动影响面看不出来。</strong> 你只想确认「我把 path 从 <code>/cases</code> 改成 <code>/flow/cases</code> 对不对」，跑整条流程代价太高。</li>
+</ol>
+<p>结论：<strong>单接口验证必须单独有入口，不能拿套件凑。</strong> 这就是 <code>tools/hit.py</code> 存在的原因。</p>
+<h3 id="14">1.4 补上的东西</h3>
+<pre><code>tools/
+  mock_server.py            dev 环境 mock
+  mock_server_session.py    session 环境 mock
+  hit.py                    ★ 单接口联调工具（本次新增）
+</code></pre>
+<hr />
+<h2 id="2">2. 三种单接口测试方式</h2>
+<h3 id="21-curl-postman">2.1 方式一：curl / Postman 直打</h3>
+<p><strong>能用，但不该用于鉴权验证。</strong> 本项目的鉴权是 Cookie + CSRF，手工打会踩一串坑：</p>
+<pre><code class="language-bash"># 你得自己登录、自己存 Cookie、自己从 Cookie 里抠 csrftoken、自己补 X-CSRFToken 头
+curl -c /tmp/c.txt -X POST http://127.0.0.1:18889/auth/login \
+     -H 'Content-Type: application/json' \
+     -d '{&quot;username&quot;:&quot;test1&quot;,&quot;password&quot;:&quot;...&quot;}'
+CSRF=$(awk '/csrftoken/{print $7}' /tmp/c.txt)
+curl -b /tmp/c.txt -X GET http://127.0.0.1:18889/flow/cases -H &quot;X-CSRFToken: $CSRF&quot;
+</code></pre>
+<p>缺陷清单：</p>
+<ul>
+<li>前缀 <code>/flow</code> 要自己拼，拼错了报 404，你会以为是接口不存在</li>
+<li>CSRF 头漏了会 403，且报错信息不一定告诉你少了什么</li>
+<li><strong>没有 401 自动重登</strong>（框架里 <code>HttpClient</code> 有，手工打没有）</li>
+<li>换账号要重来一遍</li>
+<li>无法验证「鉴权体系本身对不对」——因为你绕过它了</li>
+</ul>
+<blockquote>
+<p><strong>结论</strong>：curl 只适合<strong>确认服务活着</strong>（<code>curl http://127.0.0.1:18889/health</code>），不要用它验接口。</p>
+</blockquote>
+<h3 id="22-toolshitpy">2.2 方式二：<code>tools/hit.py</code>（日常主力，推荐）</h3>
+<p>它<strong>复用框架完整装配链路</strong>，不是另起一套：</p>
+<pre><code>config/env/&lt;env&gt;.yaml ─┐
+config/&lt;账号表&gt;.yaml   ─┼─→ SessionFactory ─→ Context ─→ 页面对象 ─→ HttpClient
+config/secrets.env     ─┘                                              ↓
+                                                   鉴权 / 401自愈 / 重试 / Cookie隔离
+</code></pre>
+<p>也就是说：<strong>hit.py 打通 = 用例里也会通</strong>（同一份代码路径、同一份凭证缓存）。这是它比 curl 强的根本原因。</p>
+<h3 id="23-suite-ci">2.3 方式三：单条目 suite（进 CI / 要留报告时用）</h3>
+<p>需要一个能沉淀成报告的「单接口用例」时，新建一个只有一个用例类的套件：</p>
+<pre><code class="language-yaml"># suites/probe_apply.yaml
+name: 申请页单接口探针
+description: 只读验证申请列表接口是否可用（安全，无副作用）
+cases:
+  - cases.all_pages_case:AllPagesFlowCase
+</code></pre>
+<pre><code class="language-bash">python runner/main.py --env session --suite probe_apply
+# 报告落在 reports/report-session-probe_apply.json
+</code></pre>
+<p><strong>能力边界</strong>：它仍然是「用例类」粒度。要真正做到单接口，得写一个只有一个 <code>test_01_</code> 方法的小用例类。适合<strong>长期值守</strong>的场景（比如 CI 里每分钟探一次关键接口）。</p>
+<h3 id="24">2.4 怎么选</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>用哪个</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>确认服务活着</td>
+<td>curl <code>/health</code></td>
+</tr>
+<tr>
+<td>新增/改动一个接口，我要立刻知道通没通</td>
+<td><strong>hit.py</strong></td>
+</tr>
+<tr>
+<td>换账号验权限（越权/漏权）</td>
+<td><strong>hit.py</strong>（<code>--account</code>）</td>
+</tr>
+<tr>
+<td>验证未登录拦截</td>
+<td><strong>hit.py</strong>（<code>--no-auth</code>）</td>
+</tr>
+<tr>
+<td>接口还没写成页面方法，先探路</td>
+<td><strong>hit.py</strong>（<code>--raw</code>）</td>
+</tr>
+<tr>
+<td>要留给 CI、要出报告</td>
+<td>单条目 suite + 小用例类</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-hitpy">3. hit.py 使用手册</h2>
+<h3 id="31">3.1 参数总表</h3>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--env</code></td>
+<td>环境名，对应 <code>config/env/&lt;env&gt;.yaml</code>，默认 <code>dev</code></td>
+</tr>
+<tr>
+<td><code>--list</code></td>
+<td><strong>打印所有页面类与接口方法后退出</strong>（先跑这个）</td>
+</tr>
+<tr>
+<td><code>--list-accounts</code></td>
+<td>打印账号注册表后退出</td>
+</tr>
+<tr>
+<td><code>--api 类.方法</code></td>
+<td>要调的接口，如 <code>ApplyPageApi.list_applications</code></td>
+</tr>
+<tr>
+<td><code>--account</code></td>
+<td>指定账号，覆盖页面类默认账号</td>
+</tr>
+<tr>
+<td><code>--arg</code></td>
+<td>位置参数（可重复，能当 JSON 解就当 JSON）</td>
+</tr>
+<tr>
+<td><code>--kw</code></td>
+<td>关键字参数 <code>key=value</code>（可重复）</td>
+</tr>
+<tr>
+<td><code>--raw METHOD PATH</code></td>
+<td>不经页面对象，直接打裸路径</td>
+</tr>
+<tr>
+<td><code>--prefix</code></td>
+<td>配 <code>--raw</code>，拼在路径前的公共前缀</td>
+</tr>
+<tr>
+<td><code>--params</code> / <code>--json</code> / <code>--data</code></td>
+<td><code>--raw</code> 的 query / JSON body / 表单体</td>
+</tr>
+<tr>
+<td><code>--header</code></td>
+<td>附加请求头 <code>key:value</code>（可重复）</td>
+</tr>
+<tr>
+<td><code>--no-auth</code></td>
+<td><strong>全新匿名连接</strong>发送（见 §6.1，不是简单的 <code>auth=False</code>）</td>
+</tr>
+<tr>
+<td><code>--expect-status</code></td>
+<td>期望状态码，不符即失败</td>
+</tr>
+<tr>
+<td><code>--expect PATH</code></td>
+<td>断言响应体某路径存在<strong>且非空</strong>（可重复）</td>
+</tr>
+<tr>
+<td><code>--expect-eq PATH=VALUE</code></td>
+<td>断言响应体某路径等于期望值（可重复）</td>
+</tr>
+<tr>
+<td><code>--repeat N</code></td>
+<td>重复发送 N 次，用于观察缓存/幂等</td>
+</tr>
+<tr>
+<td><code>--save PATH</code></td>
+<td>把响应（含完整 headers）存成 JSON，便于照着写页面对象</td>
+</tr>
+<tr>
+<td><code>--max-body</code></td>
+<td>响应体打印上限字符数，默认 2000，<code>0</code> 为不截断</td>
+</tr>
+<tr>
+<td><code>--show-cookies</code></td>
+<td>打印响应里的 <code>Set-Cookie</code></td>
+</tr>
+<tr>
+<td><code>--log-level</code></td>
+<td>覆盖日志级别，调鉴权链路时用 <code>DEBUG</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="32">3.2 五个典型场景（均为实测输出）</h3>
+<h4 id="1_1">场景 1 · 先看有什么接口</h4>
+<pre><code class="language-bash">python tools/hit.py --env session --list
+</code></pre>
+<p>输出（节选）：</p>
+<pre><code>环境 session   base_url=http://127.0.0.1:18889   api_prefix=/flow
+
+ApplyPageApi   默认账号=test1   前缀=/flow
+    GET    /flow/cases
+           list_applications(status=None, page=1, size=20)
+    POST   /flow/cases
+           submit_application(title, **extra)
+
+FlowApi   默认账号=test1   前缀=(无)
+    POST   /flow/changes
+           create_change(title, **extra)
+    ...
+
+共 14 个页面类 / 36 个接口方法
+</code></pre>
+<p>它是<strong>静态解析源码</strong>得出的：HTTP 动词、路径、默认账号、前缀、方法签名一次看全。前缀显示 <code>(无)</code> 表示该类自己声明了 <code>prefix = ""</code>。</p>
+<blockquote>
+<p>清单里带 <code>[辅助]</code> 标记的（如 <code>UserApi.as_public</code>）只换账号、不发请求，不能用本工具直接调。</p>
+</blockquote>
+<h4 id="2_1">场景 2 · 打一个接口</h4>
+<pre><code class="language-bash">python tools/hit.py --env session --api ApplyPageApi.list_applications \
+    --account test1 --kw page=1 --expect-status 200
+</code></pre>
+<pre><code>调用 ApplyPageApi.list_applications()  账号=test1  前缀=/flow
+  入参: args=[] kwargs={&quot;page&quot;: 1}
+[list_applications] 请求
+  GET http://127.0.0.1:18889/flow/cases
+  发起账号 : test1
+  query    : {&quot;page&quot;: 1, &quot;size&quot;: 20}
+[list_applications] 响应
+  HTTP 200   1.05ms   application/json; charset=utf-8
+  body:
+    { &quot;code&quot;: 0, &quot;data&quot;: { &quot;items&quot;: [], &quot;total&quot;: 0 } }
+✅ 通过（1 个响应）  最后一次 HTTP 200
+</code></pre>
+<p>注意它把 <strong>最终 URL / query / body / 发起账号</strong> 全打出来了——这正是排查「前缀拼歪」「参数没传进去」「用的不是我以为的账号」所需要的信息。</p>
+<h4 id="3">场景 3 · 换账号验权限（最有价值的一招）</h4>
+<p>同一个接口，两个账号各打一次：</p>
+<pre><code class="language-bash"># 创建人 test1 去评审 → 应 403
+python tools/hit.py --env session --api FlowApi.sre_review \
+    --account test1 --arg CH0001 --expect-status 403
+
+# SRE 专家 test34 去评审 → 应 200
+python tools/hit.py --env session --api FlowApi.sre_review \
+    --account test34 --arg CH0001 --expect-status 200 --expect-eq data.status=sre_approved
+</code></pre>
+<p>实测输出（前者）：</p>
+<pre><code>  POST http://127.0.0.1:18889/flow/changes/CH0001/sre-review
+  发起账号 : test1
+  HTTP 403   15.6ms
+  body:
+    {
+      &quot;code&quot;: 403,
+      &quot;message&quot;: &quot;account 'test1' (role=creator) is not allowed here&quot;,
+      &quot;required_roles&quot;: [&quot;sre_expert&quot;]
+    }
+✅ 通过（1 个响应）  最后一次 HTTP 403
+</code></pre>
+<p><strong>「该拒的拒、该放的放」两侧都要测。</strong> 只测 403 会漏掉「权限配得太大」；只测 200 会漏掉「权限没收紧」。这套对照就是 §4.2 的权限矩阵。</p>
+<h4 id="4">场景 4 · 验未登录拦截</h4>
+<pre><code class="language-bash">python tools/hit.py --env session --api FlowApi.me --account test1 --no-auth --expect-status 401
+</code></pre>
+<pre><code>⚠️ --no-auth：使用全新匿名连接（Cookie 与 Token 一个都不带）
+  GET http://127.0.0.1:18889/me
+  发起账号 : anonymous
+  HTTP 401   19.79ms
+  body: { &quot;code&quot;: 401, &quot;message&quot;: &quot;missing or invalid session cookie&quot; }
+✅ 通过（1 个响应）  最后一次 HTTP 401
+</code></pre>
+<p>对照（带凭证）：同一条命令去掉 <code>--no-auth</code> → <code>HTTP 200</code>、<code>data.role = creator</code>。<strong>两个结果一起才能证明鉴权真的在起作用。</strong></p>
+<h4 id="5">场景 5 · 接口还没封装成页面方法，先裸路径探路</h4>
+<p>写页面对象之前，先用裸路径摸清真实响应长什么样：</p>
+<pre><code class="language-bash"># 路径完全自己说了算：不经过 prefix 逻辑
+python tools/hit.py --env session --raw GET /changes --account test1 --prefix /flow
+python tools/hit.py --env session --raw POST /changes --account test1 --prefix /flow \
+    --json '{&quot;title&quot;:&quot;联调验证&quot;}'
+python tools/hit.py --env session --raw GET /changes --account test1 --prefix /flow \
+    --params '{&quot;page&quot;:1}' --header 'X-Trace-Id:abc'
+</code></pre>
+<p>加上 <code>--save</code> 就能把真实响应结构存下来，照着写页面方法：</p>
+<pre><code class="language-bash">python tools/hit.py --env session --api ApplyPageApi.list_applications \
+    --account test1 --save runtime/probe/apply_list.json
+</code></pre>
+<p>存下来的内容包含 <code>method / url / account / status / elapsed_ms / headers / body / raw_text</code>——写 <code>field()</code> 断言时直接照着 <code>body</code> 的点号路径抄。</p>
+<h3 id="33-ci">3.3 退出码（CI 友好）</h3>
+<table>
+<thead>
+<tr>
+<th>码</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>全部断言通过</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>有断言失败（接口通了但行为不对）</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>用法/配置错误（账号不存在、环境不匹配、参数格式错、<strong>或框架级错误</strong>）</td>
+</tr>
+</tbody>
+</table>
+<p><code>1</code> 和 <code>2</code> 分开很有用：前者是「被测系统有问题」，后者是「你自己的调用姿势有问题」。</p>
+<h3 id="34">3.4 与用例调用同源</h3>
+<table>
+<thead>
+<tr>
+<th>环节</th>
+<th>hit.py</th>
+<th>用例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>读环境/前缀</td>
+<td><code>load_settings(env)</code></td>
+<td>同</td>
+</tr>
+<tr>
+<td>读账号表</td>
+<td><code>load_accounts(settings.accounts_file)</code></td>
+<td>同</td>
+</tr>
+<tr>
+<td>凭证</td>
+<td>同一个 <code>TokenStore</code>（同一份 <code>runtime/credentials.&lt;env&gt;.json</code>）</td>
+<td>同</td>
+</tr>
+<tr>
+<td>会话隔离</td>
+<td>同一个 <code>SessionFactory</code></td>
+<td>同</td>
+</tr>
+<tr>
+<td>请求出口</td>
+<td>同一个 <code>HttpClient</code>（鉴权/401自愈/重试全在）</td>
+<td>同</td>
+</tr>
+<tr>
+<td>目标方法</td>
+<td>同一个页面类的同一个方法</td>
+<td>同</td>
+</tr>
+</tbody>
+</table>
+<p><strong>所以 hit.py 打通基本等价于用例里会通。</strong> 反过来不成立——见 §6.10。</p>
+<hr />
+<h2 id="4_1">4. 验证点清单：怎么算「真正生效」</h2>
+<h3 id="41-bug">4.1 五层判据（缺一层就可能放过 bug）</h3>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>验什么</th>
+<th>hit.py 怎么写</th>
+<th>常见假绿</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 路由存在</td>
+<td>不是 404/405</td>
+<td><code>--expect-status 200</code>（或 201）</td>
+<td>404 被当成「接口对但没数据」</td>
+</tr>
+<tr>
+<td>② 鉴权正确</td>
+<td>该拦的拦、该放的放</td>
+<td><code>--no-auth --expect-status 401</code>；换账号 <code>--expect-status 403</code></td>
+<td>只测登录态，没测未登录/越权</td>
+</tr>
+<tr>
+<td>③ 契约一致</td>
+<td>字段名、类型、层级</td>
+<td><code>--expect data.id</code> / <code>--expect-eq data.status=sre_approved</code></td>
+<td>只看状态码，字段改名了也不知道</td>
+</tr>
+<tr>
+<td>④ 业务规则</td>
+<td>状态流转、约束、四眼原则</td>
+<td><code>--expect-eq data.reviewed_by=test34</code></td>
+<td>只看 200，没验规则真的生效</td>
+</tr>
+<tr>
+<td>⑤ 副作用落地</td>
+<td><strong>写后必回查</strong></td>
+<td>先 POST，再 GET 回查</td>
+<td><strong>最危险</strong>：201 只代表「收到了」，不代表「存下了」</td>
+</tr>
+</tbody>
+</table>
+<h4 id="5_1">关于第 ⑤ 层（重点）</h4>
+<p>实测演示：</p>
+<pre><code class="language-bash"># 写：提交申请单
+python tools/hit.py --env session --api ApplyPageApi.submit_application \
+    --account test1 --kw title=单接口联调样例 --expect-status 201 --expect data.id
+#   → HTTP 201, data.id = CASE0003
+
+# 回查：确认真的落库了
+python tools/hit.py --env session --api ApplyPageApi.list_applications \
+    --account test1 --expect data.items
+#   → HTTP 200，列表里能看到刚建的单子
+</code></pre>
+<p><strong>为什么必须回查？</strong> 因为 <code>201 Created</code> 只证明服务端接受了请求。写入失败但返回 201、写到了另一个租户、被事务回滚——这些都得靠回查才能发现。</p>
+<h4 id="-expect"><code>--expect</code> 的语义陷阱</h4>
+<p><code>--expect PATH</code> = <strong>存在且非空</strong>。所以：</p>
+<pre><code class="language-bash"># 这条会「失败」，因为列表是空的 —— 这是刻意的
+python tools/hit.py --env session --api ApplyPageApi.list_applications \
+    --account test1 --expect data.items
+# ❌ 字段 'data.items' 为空值: []
+</code></pre>
+<p>要断言「是个空列表」而不是「有数据」，用 <code>--expect-eq data.total=0</code>，或者干脆只留 <code>--expect-status 200</code>。</p>
+<h3 id="42-n">4.2 权限矩阵（同一接口 × N 账号）</h3>
+<p>一个接口的权限写对了没有，用矩阵说话：</p>
+<pre><code class="language-bash">API=FlowApi.sre_review; ARG=CH0001
+for pair in &quot;test1 403&quot; &quot;test34 200&quot; &quot;test38 200&quot; &quot;test666 403&quot;; do
+  set -- $pair
+  printf &quot;%-10s 期望 %s  &quot; &quot;$1&quot; &quot;$2&quot;
+  python tools/hit.py --env session --api $API --account $1 --arg $ARG \
+      --expect-status $2 &gt;/dev/null 2&gt;&amp;1 &amp;&amp; echo &quot;✅ 符合&quot; || echo &quot;❌ 不符合&quot;
+done
+</code></pre>
+<p><strong>每个接口都该有这张表</strong>，写进用例（参考 <code>cases/account_roles_case.py</code> 的做法）。矩阵里最容易漏的是「同级账号也应通过」——比如两个 SRE 专家（<code>test34</code>/<code>test38</code>）权限必须等价。</p>
+<h3 id="43">4.3 会话隔离（凭证不串号）</h3>
+<p>跨账号操作后，回头确认 A 的会话没被 B 污染：</p>
+<pre><code class="language-bash">python tools/hit.py --env session --api FlowApi.me --account test1 --expect-eq data.role=creator
+python tools/hit.py --env session --api FlowApi.me --account test34 --expect-eq data.role=sre_expert
+</code></pre>
+<p><code>ApiResponse.account</code> 字段会记录<strong>发起请求的账号名</strong>，配合 <code>--expect-eq</code> 就能把串号钉死。</p>
+<h3 id="44">4.4 幂等与重复调用</h3>
+<pre><code class="language-bash"># 打 3 次，看第 2、3 次是否更快（命中会话缓存）、结果是否一致
+python tools/hit.py --env session --api FlowApi.whoami --account test34 --repeat 3
+</code></pre>
+<p>实测：第一次 <code>从缓存恢复会话（2 个 Cookie）</code> 后 4.26ms，第二、三次 0.88ms / 0.71ms。若第 2 次突然变慢或返回不同结果，说明有非预期的会话重建或状态漂移。</p>
+<h3 id="45">4.5 性能基线</h3>
+<pre><code class="language-bash">python tools/hit.py --env dev --api ProductApi.list --expect-status 200
+#   → HTTP 200   25.29ms
+</code></pre>
+<p>响应头里 <code>elapsed_ms</code> 会打印出来。单接口数字落下来，整条流程慢了才知道是哪个环节慢。</p>
+<hr />
+<h2 id="5-7">5. 新增接口的联调流程（7 步）</h2>
+<p>以「给申请页面新增一个『撤回申请』接口」为例。</p>
+<h3 id="1_2">步骤 1 · 探路：确认真实响应长什么样</h3>
+<p>还没写任何代码，先用裸路径打：</p>
+<pre><code class="language-bash">python tools/hit.py --env session --raw POST /cases/CASE0003/withdraw \
+    --account test1 --prefix /flow --save runtime/probe/withdraw.json
+</code></pre>
+<ul>
+<li><strong>通过标准</strong>：返回 200/201，<code>runtime/probe/withdraw.json</code> 里有真实字段结构</li>
+<li><strong>失败长什么样</strong>：<code>no route for POST /flow/cases/.../withdraw</code> → 路径记错了，回头核对接口文档</li>
+<li><strong>如果这里就不通，别往下走</strong>。先和服务端确认路径/方法/参数名</li>
+</ul>
+<h3 id="2_2">步骤 2 · 定路径与前缀</h3>
+<p>根据步骤 1 的 URL，判断前缀归属：</p>
+<table>
+<thead>
+<tr>
+<th>情况</th>
+<th>页面类怎么写</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>路径形如 <code>/flow/cases/{id}/withdraw</code></td>
+<td><strong>不写 <code>prefix</code></strong>（继承环境 <code>api_prefix</code>），方法里写 <code>f"/cases/{case_id}/withdraw"</code></td>
+</tr>
+<tr>
+<td>路径形如 <code>/withdraw/{id}</code>（独立顶级路径）</td>
+<td>环境 <code>api_prefix</code> 之外，写 <code>prefix = ""</code>，方法里写完整路径</td>
+</tr>
+<tr>
+<td>路径形如 <code>/flow-v2/xxx</code>（类自带固定前缀）</td>
+<td>写 <code>prefix = "/flow-v2"</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>这是最容易出错的一步</strong>（拼错了就是 404）。决策依据见 §6.3。</p>
+<h3 id="3_1">步骤 3 · 写页面方法</h3>
+<p>在 <code>apis/apply_page.py</code> 加一个方法。<strong>方法体里不允许出现任何凭证代码</strong>：</p>
+<pre><code class="language-python">def withdraw_application(self, case_id, reason=&quot;&quot;, **extra):
+    &quot;&quot;&quot;撤回申请。&quot;&quot;&quot;
+    payload = {&quot;reason&quot;: reason, **extra}
+    return self.post(self.ctx.interpolate(f&quot;/cases/{case_id}/withdraw&quot;),
+                     json=self.ctx.interpolate(payload))
+</code></pre>
+<p>约定（照抄现有方法的骨架就行）：</p>
+<ul>
+<li>一个接口 = 一个方法，方法名用动词</li>
+<li><code>**extra</code> 兜底，方便临时塞参数联调</li>
+<li>路径和 payload 都过 <code>self.ctx.interpolate(...)</code>，这样 <code>${case_id}</code> 这类变量能自动替换</li>
+<li>直接 <code>return</code> 响应，不要自己解析、不要自己断言（断言属于用例层）</li>
+</ul>
+<h3 id="4_2">步骤 4 · 单接口验证（<strong>新增接口的核心环节</strong>）</h3>
+<pre><code class="language-bash"># 4.1 确认方法被正确识别、URL 拼对了
+python tools/hit.py --env session --list | grep -A2 withdraw
+
+# 4.2 打一发，看契约（注意这里用 --save 留档）
+python tools/hit.py --env session --api ApplyPageApi.withdraw_application \
+    --account test1 --arg CASE0003 --kw reason=联调撤回 \
+    --expect-status 200 --save runtime/probe/withdraw_done.json
+
+# 4.3 写后回查，确认副作用落地
+python tools/hit.py --env session --api ApplyPageApi.list_applications \
+    --account test1 --expect data.items
+</code></pre>
+<ul>
+<li><strong>通过标准</strong>：4.1 显示正确 URL；4.2 状态码符合预期且字段在；4.3 回查能看到状态变了</li>
+<li><strong>失败常见形态</strong>：404（前缀/路径错）、403（账号选错）、422（参数名错）、200 但字段名和文档不符</li>
+</ul>
+<h3 id="5_2">步骤 5 · 权限矩阵</h3>
+<p>按 §4.2 跑四个账号，确认「该拒的拒、该放的放」。</p>
+<pre><code class="language-bash">for pair in &quot;test1 200&quot; &quot;test34 403&quot; &quot;test38 403&quot; &quot;test666 403&quot;; do
+  set -- $pair
+  printf &quot;%-10s 期望 %s  &quot; &quot;$1&quot; &quot;$2&quot;
+  python tools/hit.py --env session --api ApplyPageApi.withdraw_application \
+      --account $1 --arg CASE0003 --expect-status $2 &gt;/dev/null 2&gt;&amp;1 \
+      &amp;&amp; echo &quot;✅&quot; || echo &quot;❌&quot;
+done
+</code></pre>
+<ul>
+<li><strong>通过标准</strong>：四条全部符合</li>
+<li>如果全是 403 → 大概率账号表里角色写错了，用 <code>--list-accounts</code> 核对</li>
+</ul>
+<h3 id="6">步骤 6 · 入用例</h3>
+<p>单接口通了，才把它编进用例。在目标用例类里加 <code>test_0N_</code> 方法（<code>N</code> 决定顺序）：</p>
+<pre><code class="language-python">def test_05_withdraw_application(self):
+    page = self.api(ApplyPageApi)                    # 默认账号 test1
+    resp = page.withdraw_application(
+        self.ctx.get(&quot;case_id&quot;), reason=&quot;用例内撤回&quot;)
+    self.check(&quot;撤回申请&quot;, resp, expect_status=200,
+               expect=all_of(field(&quot;data.status&quot;, &quot;withdrawn&quot;)))
+</code></pre>
+<p>要点：</p>
+<ul>
+<li>用 <code>self.check(...)</code> 记账，不要用裸 <code>assert</code>——<code>check</code> 会把结果并进报告且不中断流程</li>
+<li>需要别的账号：<code>self.api(ApplyPageApi, account="test34")</code></li>
+<li>上一步的返回值用 <code>self.ctx.set("case_id", resp.get("data.id"))</code> 传给下一步</li>
+</ul>
+<h3 id="7">步骤 7 · 跑整条套件回归</h3>
+<pre><code class="language-bash">python runner/main.py --env session --suite all_pages
+</code></pre>
+<ul>
+<li><strong>通过标准</strong>：步骤数 = 原基线 + 你新增的步骤数，且 0 失败</li>
+<li>已有基线：<code>all_pages</code> 16/16、<code>multi_account</code> 27/27、<code>account_roles</code> 39/39、<code>dev/regression</code> 15/15</li>
+<li><strong>如果单接口绿、套件红</strong> → 几乎一定是数据依赖或顺序问题，见 §6.8</li>
+</ul>
+<hr />
+<h2 id="6_1">6. 注意事项（全部来自实测踩坑）</h2>
+<h3 id="61-no-auth-authfalse">6.1 <code>--no-auth</code> 为什么不能用 <code>auth=False</code> 实现</h3>
+<p><code>HttpClient.request(auth=False)</code> 只跳过「注入鉴权头」这一步。<strong>Cookie 是 <code>requests.Session</code> 自动带的</strong>——凭证本来就在 Session 的 CookieJar 里，跳过注入带不走它。</p>
+<p>实测证据：一开始用 <code>auth=False</code> 实现 <code>--no-auth</code>，打 <code>FlowApi.me</code> 返回的是 <strong>200 + <code>data.role=creator</code></strong>，也就是<strong>根本没测成未登录</strong>。</p>
+<p>正确做法：<strong>换一条全新的 <code>requests.Session</code></strong>（本工具用 <code>AnonymousContext</code> 直接构造一个未绑定鉴权策略的 <code>HttpClient</code>）。改完实测为 <code>401 missing or invalid session cookie</code>。</p>
+<p><strong>推广结论</strong>：任何「模拟未登录」的需求，都必须保证请求上真的没有 Cookie，而不是「不主动加头」。</p>
+<h3 id="62-git-bash">6.2 Git Bash 会改写以 <code>/</code> 开头的参数</h3>
+<p>MSYS 把 <code>/flow</code> 当路径处理，实际传给 Python 的是：</p>
+<pre><code>E:/soft/WorkBuddy/resources/vendor/PortableGit/flow
+</code></pre>
+<p>于是 URL 变成 <code>http://127.0.0.1:18889/E:/.../PortableGit/flow/...</code>，服务端报 <code>no route</code>。<strong>看起来像接口不存在，其实是你的参数被 shell 改了。</strong></p>
+<p>两种解法：</p>
+<pre><code class="language-bash"># 解法 1（推荐给脚本）：关掉路径转换
+MSYS_NO_PATHCONV=1 python tools/hit.py --env session --raw GET /changes \
+    --account test1 --prefix /flow
+
+# 解法 2：不写前导斜杠，工具会自动补
+python tools/hit.py --env session --raw GET changes --account test1 --prefix flow
+</code></pre>
+<p>本工具会<strong>自动还原</strong>被改写的参数（通过 <code>cygpath -m /</code> 拿到 MSYS 根目录后剥掉）；万一还原不了，会直接报错并提示上面两种解法，而不是让你对着 404 发呆。</p>
+<h3 id="63-prefix">6.3 prefix 三态必须分清</h3>
+<p>最终 URL = <code>base_url</code> + <code>prefix</code> + <code>path</code>，而 <code>prefix</code> 有三种语义：</p>
+<table>
+<thead>
+<tr>
+<th>页面类写法</th>
+<th>含义</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>不写</strong> <code>prefix</code></td>
+<td><code>None</code> → 回落环境配置 <code>api_prefix</code></td>
+<td>默认，绝大多数页面</td>
+</tr>
+<tr>
+<td><code>prefix = ""</code></td>
+<td>明确「无前缀」，方法里的 path 就是完整路径</td>
+<td>顶层路径接口（如 <code>FlowApi</code>：<code>/flow/changes</code>）</td>
+</tr>
+<tr>
+<td><code>prefix = "/xx"</code></td>
+<td>类自带固定前缀，优先级最高</td>
+<td>独立子系统（如 <code>OrderApi: /orders</code>）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>注意页面类前缀不会自动叠加环境前缀</strong>——<code>prefix = "/orders"</code> 就是最终前缀，<code>api_prefix: /flow</code> 对它无效。判断方法直接看 <code>hit.py --list</code> 里打印的 URL。</p>
+<h3 id="64">6.4 环境与账号表是耦合的（拿错环境报的是「账号不存在」）</h3>
+<p><code>config/env/&lt;env&gt;.yaml</code> 里的 <code>accounts_file</code> 决定读哪张账号表。两个环境用的是不同表：</p>
+<table>
+<thead>
+<tr>
+<th>环境</th>
+<th>base_url</th>
+<th>账号表</th>
+<th>账号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dev</code></td>
+<td>127.0.0.1:18888</td>
+<td><code>config/roles.yaml</code></td>
+<td>admin / guest / merchant</td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td>127.0.0.1:18889</td>
+<td><code>config/accounts.session.yaml</code></td>
+<td>test1 / test34 / test38 / test666 / buyer_a / buyer_b / ops_admin / guest_web / partner_bot</td>
+</tr>
+</tbody>
+</table>
+<p>后果：<code>8 个 *_page.py</code> 声明的是 session 账号，用 <code>--env dev</code> 打它们会报：</p>
+<pre><code>账号 'test1' 不在环境账号表里。
+当前可用的账号：admin, guest, merchant
+（提示：页面类的默认账号可能属于另一个环境，用 --account 显式指定）
+</code></pre>
+<p><strong>记住这条</strong>：看到「账号不存在」，先想是不是环境选错了，而不是去改账号表。</p>
+<p>同类问题在套件层也有：<code>python runner/main.py --env session --suite regression</code> 会是 <strong>0/2 全红</strong>，因为 <code>regression</code> 套件里的用例用的是 dev 账号。这不是 bug，是环境-套件配错了。</p>
+<h3 id="65-hitpy">6.5 hit.py 不做跨步骤变量传递</h3>
+<p><code>${var}</code> 需要 <code>Context</code> 里有值。单接口调用时上下文是空的，所以：</p>
+<pre><code class="language-bash">python tools/hit.py --env session --api ShopApi.place_order --account buyer_a \
+    --kw product_id='${pid}'
+# [框架级错误] FrameworkError: 上下文里没有变量 'pid'，已有变量: []
+</code></pre>
+<p>行为是<strong>正确的</strong>（早失败、报错点明缺哪个变量），但意味着：<strong>有前后依赖的场景不能靠 hit.py 串起来</strong>，要用一个临时用例类，或者手工把上一步的真实值填进去（这也是为什么 <code>--save</code> 和回查很重要——你能从响应里拿到真实 id）。</p>
+<h3 id="66-mock">6.6 mock 是有状态的，写接口会留脏数据</h3>
+<p><code>tools/mock_server*.py</code> 在内存里维护数据。实测连续调用后：</p>
+<pre><code>CASE0003   ← 提交申请单产生
+CH0001     ← 创建变更单产生
+</code></pre>
+<p>而这些<strong>不会自动清理</strong>——项目里 5 个用例<strong>全部没有覆写 <code>teardown_case()</code></strong>。真实环境接入前必须先约定清理策略（见 <code>docs/真实接口接入操作指导.md</code>）。</p>
+<p><strong>联调期的自保做法</strong>：</p>
+<ul>
+<li>优先用读接口验证（<code>GET</code>），写接口只在必要时打</li>
+<li>打写接口时把产生的 id 记下来（<code>--save</code> 会帮你存）</li>
+<li>别在共享环境里跑「批量压测式」的重复写调用</li>
+</ul>
+<h3 id="67-401">6.7 401 自动重登只对「本来就要凭证」的账号生效</h3>
+<p><code>core/http_client.py</code> 里的 401 自愈条件是：</p>
+<pre><code class="language-python">if raw.status_code == 401 and self._strategy.requires_credential:
+</code></pre>
+<p>所以：</p>
+<ul>
+<li><code>cookie</code> / <code>bearer</code> / <code>header</code> 账号：收到 401 会<strong>作废本人会话并重试一次</strong>（这是它该有的行为）</li>
+<li><code>none</code> 账号（如 <code>guest</code>）：401 是权限/配置问题，重登没意义，<strong>不会重试</strong></li>
+<li><strong>只重试一次</strong>，避免凭证配错时死循环</li>
+</ul>
+<p>联调时看到 401，先确认「这个账号本来就该带凭证吗」，再决定是查凭证还是查权限。</p>
+<h3 id="68">6.8 单接口调通 ≠ 用例通过</h3>
+<p>单接口验证的上下文是<strong>空</strong>的，用例里的上下文有<strong>前序步骤的产出</strong>。两者差异：</p>
+<table>
+<thead>
+<tr>
+<th>差异点</th>
+<th>表现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据依赖</td>
+<td>单接口用你手填的 <code>CASE0003</code>（真实存在），用例里要用上一步产出的 <code>case_id</code></td>
+</tr>
+<tr>
+<td>执行顺序</td>
+<td>用例步骤按方法名字典序跑，新加的方法名排在哪个位置要算清楚</td>
+</tr>
+<tr>
+<td>状态污染</td>
+<td>单接口跑 N 次是 N 个独立请求；用例里同一账号同一 Session，前一步的改动会影响后一步</td>
+</tr>
+<tr>
+<td>变量替换</td>
+<td>用例里 <code>${var}</code> 有值，单接口里没有</td>
+</tr>
+</tbody>
+</table>
+<p><strong>所以步骤 7 的整条套件回归不能省。</strong></p>
+<h3 id="69">6.9 凭证缓存的位置与强制刷新</h3>
+<ul>
+<li>落盘位置：<code>runtime/credentials.&lt;env&gt;.json</code></li>
+<li>由 <code>TokenStore</code> 托管，用例完全无感知</li>
+<li>想强制重新登录：给 <code>hit.py</code> 或 <code>runner</code> 加 <code>--fresh-token</code></li>
+<li>关掉落盘：环境配置里 <code>persist_credentials: false</code></li>
+</ul>
+<p><strong>排查「我明明改了凭据却没生效」时</strong>，顺序是：① 环境变量是否覆盖了 <code>secrets.env</code> → ② <code>--fresh-token</code> 重试一次 → ③ 看一眼 <code>runtime/credentials.&lt;env&gt;.json</code>。</p>
+<h3 id="610">6.10 报告里有敏感信息</h3>
+<p><code>runner/main.py</code> 会把凭证写入报告：</p>
+<pre><code class="language-python">&quot;preview&quot;: (t.value[:8] if t.value else &quot;,&quot;.join(sorted(t.cookies))[:32])
+</code></pre>
+<p>即 <strong>token 前 8 位</strong>或 Cookie 名列表，落在 <code>reports/report-&lt;env&gt;-&lt;suite&gt;.json</code>。接真实环境后：</p>
+<ul>
+<li>报告不要外发</li>
+<li>共享机器上跑完清理 <code>reports/</code> 和 <code>runtime/</code></li>
+</ul>
+<p>（<code>reports/</code>、<code>runtime/</code>、<code>config/secrets.env</code> 都已在 <code>.gitignore</code> 里，不会进版本库。）</p>
+<h3 id="611-debug">6.11 联调期间打开 DEBUG 日志</h3>
+<p>鉴权链路出问题（CSRF 缺失、Cookie 没带上、策略选错）时：</p>
+<pre><code class="language-bash">python tools/hit.py --env session --api FlowApi.me --account test1 --log-level DEBUG
+</code></pre>
+<p>会打印策略装配、登录过程、每次响应的摘要（<code>HttpClient._trace</code>）。比盲猜快得多。</p>
+<hr />
+<h2 id="7_1">7. 故障速查表</h2>
+<table>
+<thead>
+<tr>
+<th>症状</th>
+<th>最可能的原因</th>
+<th>怎么处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>404 no route for GET /E:/.../PortableGit/...</code></td>
+<td>Git Bash 改写了路径参数</td>
+<td>§6.2：加 <code>MSYS_NO_PATHCONV=1</code>，或 <code>--prefix flow</code></td>
+</tr>
+<tr>
+<td><code>404 no route for ...</code>（路径正常）</td>
+<td>前缀拼错 / path 写错</td>
+<td><code>--list</code> 看工具算出的最终 URL，与接口文档比对</td>
+</tr>
+<tr>
+<td><code>账号 'X' 不在环境账号表里</code></td>
+<td>环境选错（页面的默认账号属于另一个环境）</td>
+<td>换 <code>--env</code>，或 <code>--account</code> 显式指定本环境的账号</td>
+</tr>
+<tr>
+<td><code>401</code>（本该登录的账号）</td>
+<td>凭据不对 / 会话过期 / 缓存脏</td>
+<td><code>--fresh-token</code> 重试；仍 401 就查 <code>secrets.env</code> 和环境变量覆盖</td>
+</tr>
+<tr>
+<td><code>401</code>（<code>--no-auth</code>）</td>
+<td>——</td>
+<td>这是<strong>期望结果</strong>，说明未登录被正确拦截</td>
+</tr>
+<tr>
+<td><code>403</code></td>
+<td>账号角色不够</td>
+<td><code>--list-accounts</code> 核对角色；确认是「该拒」还是「误拒」</td>
+</tr>
+<tr>
+<td><code>422</code></td>
+<td>参数名/类型与文档不符</td>
+<td>用 <code>--raw</code> + <code>--json</code> 逐个字段试，对照 <code>--save</code> 的响应</td>
+</tr>
+<tr>
+<td><code>FrameworkError: 上下文里没有变量 'x'</code></td>
+<td>用了 <code>${var}</code> 但没有上游传值</td>
+<td>§6.5：改用真实值，或写成用例串起来</td>
+</tr>
+<tr>
+<td>状态码 200 但断言失败</td>
+<td>契约变了（字段改名/层级变了）</td>
+<td>看 <code>--save</code> 存下的 body，更新断言路径</td>
+</tr>
+<tr>
+<td><code>没有返回 ApiResponse，而是 XxxApi</code></td>
+<td>调到的是辅助方法（只换账号）</td>
+<td><code>--list</code> 里带 <code>[辅助]</code> 标记的不能直接调</td>
+</tr>
+<tr>
+<td>退出码 2 但你觉得自己写对了</td>
+<td>用法/配置错误，不是被测系统的问题</td>
+<td>读报错正文，它一般会点名缺哪个键/哪个账号</td>
+</tr>
+<tr>
+<td><code>--expect data.items</code> 报「为空值: []」</td>
+<td><code>--expect</code> 语义是「存在且非空」</td>
+<td>§4.1：改用 <code>--expect-eq data.total=0</code></td>
+</tr>
+<tr>
+<td>单接口绿、套件红</td>
+<td>数据依赖 / 执行顺序 / 上下文变量</td>
+<td>§6.8：检查用例内的 <code>ctx.set</code> 与步骤顺序</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="a-hitpy">附录 A · hit.py 与用例写法对照</h2>
+<table>
+<thead>
+<tr>
+<th>目的</th>
+<th>hit.py（单接口）</th>
+<th>用例内（BaseCase）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>取页面对象</td>
+<td><code>--api ApplyPageApi.xxx --account test1</code></td>
+<td><code>self.api(ApplyPageApi)</code> / <code>self.api(ApplyPageApi, account="test34")</code></td>
+</tr>
+<tr>
+<td>传位置参数</td>
+<td><code>--arg CASE0003</code></td>
+<td><code>page.xxx("CASE0003")</code></td>
+</tr>
+<tr>
+<td>传关键字参数</td>
+<td><code>--kw reason=联调</code></td>
+<td><code>page.xxx(reason="联调")</code></td>
+</tr>
+<tr>
+<td>断言状态码</td>
+<td><code>--expect-status 200</code></td>
+<td><code>self.check("步骤名", resp, expect_status=200)</code></td>
+</tr>
+<tr>
+<td>断言字段存在</td>
+<td><code>--expect data.id</code></td>
+<td><code>expect=field("data.id")</code></td>
+</tr>
+<tr>
+<td>断言字段等值</td>
+<td><code>--expect-eq data.status=done</code></td>
+<td><code>expect=field("data.status", "done")</code></td>
+</tr>
+<tr>
+<td>多断言组合</td>
+<td>多个 <code>--expect*</code> 并列</td>
+<td><code>expect=all_of(field(...), field(...))</code></td>
+</tr>
+<tr>
+<td>换账号</td>
+<td><code>--account test34</code></td>
+<td><code>self.api(XxxApi, account="test34")</code></td>
+</tr>
+<tr>
+<td>不带凭证</td>
+<td><code>--no-auth</code></td>
+<td>用 <code>guest</code> 之类无凭证账号</td>
+</tr>
+<tr>
+<td>留证据</td>
+<td><code>--save path.json</code></td>
+<td>报告 <code>reports/report-&lt;env&gt;-&lt;suite&gt;.json</code></td>
+</tr>
+<tr>
+<td>失败后</td>
+<td>退出码 1，直接看你那一行</td>
+<td>步骤失败不中断，报告里逐条列</td>
+</tr>
+</tbody>
+</table>
+<p>两个层面共用同一份 <code>core/</code>、<code>config/</code> 与页面对象——<strong>你在 hit.py 里验证过的行为，进用例不会变。</strong></p>
+  <footer>
+    配套阅读：<code>docs/真实接口接入操作指导.md</code>（接真实接口）·
+    <code>docs/架构总览与差异清单.html</code>（体检报告）·
+    <code>README.md</code>（使用手册）。
+  </footer>
+  </div>
+</div>
+</body>
+</html>
