@@ -1,0 +1,21 @@
+# 会话 Cookie 环境（非敏感）。敏感凭据一律放在 config/secrets.env
+base_url: http://127.0.0.1:18889
+timeout: 10
+retries: 2
+backoff: 0.3
+verify_ssl: false
+
+# 页面 URL 的公共前缀：所有未在页面类里声明 prefix 的页面对象都用它。
+# 换网关 / 换 API 版本前缀时只改这一行，页面类一处都不用动。
+# 允许写成 /flow、flow、/flow/ 任意形式；留空表示无前缀。
+# 也可用同名环境变量 API_PREFIX 覆盖（CI 里方便临时切换）。
+api_prefix: /flow
+
+# 账号表：本环境使用会话 Cookie 版账号
+accounts_file: config/accounts.session.yaml
+
+# 凭证是否落盘复用。
+# 注意：会话模式下落盘等于**明文会话落盘**，生产/共享机器上建议置 false。
+persist_credentials: true
+
+log_level: INFO

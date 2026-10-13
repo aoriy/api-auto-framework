@@ -1,0 +1,5 @@
+name: 回归套件
+description: 覆盖三角色鉴权隔离与订单主流程
+cases:
+  - cases.auth_case:AuthCase
+  - cases.order_flow_case:OrderFlowCase

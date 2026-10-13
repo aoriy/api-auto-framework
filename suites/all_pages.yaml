@@ -1,0 +1,4 @@
+name: 整体页面模板套件
+description: 一条用例覆盖 8 个页面（申请 / 专家评审 / FAE 汇总 / IPQ 审核 / FAE 组长审核 / 排查中 / 排查汇总 / 完成）的接口，验证跨页面串联
+cases:
+  - cases.all_pages_case:AllPagesFlowCase

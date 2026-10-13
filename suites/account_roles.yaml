@@ -1,0 +1,4 @@
+name: 账号角色校验套件
+description: 校验 test1 / test34 / test38 / test666 四个账号已创建且角色分配正确（创建人 / SRE 专家 / 维护 STG）
+cases:
+  - cases.account_roles_case:AccountRolesCase

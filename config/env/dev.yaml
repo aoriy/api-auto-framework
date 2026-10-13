@@ -1,0 +1,12 @@
+# 开发环境配置（非敏感）。敏感凭据一律放在 config/secrets.env
+base_url: http://127.0.0.1:18888
+timeout: 10
+retries: 2
+backoff: 0.3
+verify_ssl: false
+
+# 页面 URL 的公共前缀：未在页面类里声明 prefix 的页面对象统一取它。
+# 留空表示无前缀；也可用环境变量 API_PREFIX 覆盖。
+api_prefix: /flow
+accounts_file: config/roles.yaml
+log_level: INFO

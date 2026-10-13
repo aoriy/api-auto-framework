@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 凭据绝不进版本库
+config/secrets.env
+
+# 运行产物
+runtime/
+reports/
+
+# 日志与缓存
+*.log
+.pytest_cache/
+.pyre/
+.mypy_cache/
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

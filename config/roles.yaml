@@ -1,0 +1,52 @@
+# ============================================================
+# 角色定义（Role Registry）
+# ------------------------------------------------------------
+# 一个角色 = 一套凭据引用 + 一套「怎么登录」+ 一套「怎么带鉴权」。
+# 这里绝对不写明文密码，只用 ${VAR} 引用 config/secrets.env 里的变量。
+#
+# auth.type 可选值（对应 core/auth/strategies.py）：
+#   none / bearer / header / query / cookie / basic / signature
+# ============================================================
+
+defaults:
+  login:
+    method: POST
+    path: /auth/login
+  auth:
+    token_path: data.access_token      # 从登录响应的哪个字段取 token（点号路径）
+    expires_path: data.expires_in      # 有效期（秒），用于本地缓存过期判断
+
+roles:
+  # ---------- 平台管理员：Bearer Token，可访问 /admin 类接口 ----------
+  admin:
+    description: 平台管理员，Bearer Token 鉴权
+    login:
+      json:
+        username: ${ADMIN_USERNAME}
+        password: ${ADMIN_PASSWORD}
+        role: admin
+    auth:
+      type: bearer
+      header: Authorization
+      prefix: "Bearer "
+      refresh_path: data.refresh_token
+
+  # ---------- 商户：自定义请求头，且 token 字段位置跟 admin 不一样 ----------
+  merchant:
+    description: 商户，自定义请求头 X-Merchant-Token 鉴权
+    login:
+      json:
+        username: ${MERCHANT_USERNAME}
+        password: ${MERCHANT_PASSWORD}
+        role: merchant
+    auth:
+      type: header
+      header: X-Merchant-Token
+      token_path: data.token           # 注意：跟 admin 的 token 路径不同，框架自动适配
+
+  # ---------- 游客：无凭据，只访问公开接口 ----------
+  guest:
+    description: 游客，无鉴权，仅公开接口
+    login: null
+    auth:
+      type: none

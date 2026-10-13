@@ -1,0 +1,126 @@
+# ============================================================
+# 账号注册表（Account Registry）—— 会话 Cookie 版
+# ------------------------------------------------------------
+# 一个账号 = 一套凭据引用 + 一套「怎么登录」+ 一套「怎么带鉴权」。
+# 这里绝对不写明文密码，只用 ${VAR} 引用 config/secrets.env 里的变量。
+#
+# ★ 账号 vs 角色：
+#   账号（account）是登录单位，也是索引维度 —— 一个账号 = 一套凭据 + 一次会话。
+#   角色（role）   是账号的业务权限属性，用于权限断言。
+#   同角色可以有多个账号（buyer_a / buyer_b），它们各自独立登录、互不串号。
+#
+# ★ 主用 cookie，Authorization 仅保留一个可选入口（partner_bot）。
+#   auth.type 可选值（对应 core/auth/strategies.py）：
+#     cookie / bearer / header / query / basic / signature / none
+# ============================================================
+
+defaults:
+  login:
+    method: POST
+    path: /auth/login
+  auth:
+    type: cookie
+    session_cookie: SESSION
+    csrf_cookie: csrftoken        # 写操作前自动从本账号 CookieJar 取出来回填
+    csrf_header: X-CSRFToken
+    assume_ttl: 1800              # 本地假定 30 分钟；真实过期靠 401 兜底重登
+
+accounts:
+  # ---------- 采购员 A：会话 Cookie ----------
+  buyer_a:
+    role: buyer
+    description: 采购员 A（会话 Cookie + CSRF）
+    login:
+      json:
+        username: ${BUYER_A_USERNAME}
+        password: ${BUYER_A_PASSWORD}
+
+  # ---------- 采购员 B：同角色、另一个账号，会话必须与 A 完全隔离 ----------
+  buyer_b:
+    role: buyer
+    description: 采购员 B（同角色不同账号）
+    login:
+      json:
+        username: ${BUYER_B_USERNAME}
+        password: ${BUYER_B_PASSWORD}
+
+  # ---------- 运营管理员：不同的业务角色，同样走会话 Cookie ----------
+  ops_admin:
+    role: admin
+    description: 运营管理员（会话 Cookie + CSRF）
+    login:
+      json:
+        username: ${OPS_ADMIN_USERNAME}
+        password: ${OPS_ADMIN_PASSWORD}
+
+  # ---------- 未登录访客：无凭证 ----------
+  guest_web:
+    role: guest
+    description: 未登录访客，仅公开接口
+    login: null
+    auth:
+      type: none
+
+  # ---------- 开放平台机器人：Authorization 可选入口（不占主链路） ----------
+  partner_bot:
+    role: partner
+    description: 开放平台机器人（Bearer Token，可选入口）
+    login:
+      method: POST
+      path: /oauth/token
+      json:
+        client_id: ${PARTNER_CLIENT_ID}
+        client_secret: ${PARTNER_CLIENT_SECRET}
+    auth:
+      type: bearer
+      header: Authorization
+      prefix: "Bearer "
+      token_path: data.access_token
+      expires_path: data.expires_in
+
+  # ================================================================
+  # 变更流程账号（本次新增）
+  # ----------------------------------------------------------------
+  # 一条变更流程由三类角色分工完成：
+  #   creator        流程创建人 —— 发起变更流程
+  #   sre_expert     SRE 专家    —— 评审变更
+  #   stg_maintainer 维护 STG    —— 部署到 STG（必须先通过 SRE 评审）
+  #
+  # ★ 这张表同时就是服务端的账号注册表：tools/mock_server_session.py 直接读它，
+  #   所以「在系统里加账号」只需要改这里 + 在 secrets.env 补一条口令。
+  # ================================================================
+
+  # ---------- 流程创建人 ----------
+  test1:
+    role: creator
+    description: 流程创建人 test1
+    login:
+      json:
+        username: ${TEST1_USERNAME}
+        password: ${TEST1_PASSWORD}
+
+  # ---------- SRE 专家（两位同角色不同账号，互相之间也必须隔离会话） ----------
+  test34:
+    role: sre_expert
+    description: SRE 专家 test34
+    login:
+      json:
+        username: ${TEST34_USERNAME}
+        password: ${TEST34_PASSWORD}
+
+  test38:
+    role: sre_expert
+    description: SRE 专家 test38
+    login:
+      json:
+        username: ${TEST38_USERNAME}
+        password: ${TEST38_PASSWORD}
+
+  # ---------- 维护 STG ----------
+  test666:
+    role: stg_maintainer
+    description: 维护 STG test666
+    login:
+      json:
+        username: ${TEST666_USERNAME}
+        password: ${TEST666_PASSWORD}

@@ -1,0 +1,4 @@
+name: 多账号工作流套件
+description: 一条流程里不同接口由不同账号执行，覆盖会话隔离、CSRF 绑定与单账号自愈
+cases:
+  - cases.multi_account_flow_case:MultiAccountFlowCase
