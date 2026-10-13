@@ -1,0 +1,79 @@
+# ============================================================================
+# .gitattributes — 统一换行符与文本/二进制判定
+#
+# 背景：本机全局 core.autocrlf=true，会把入库的 LF 文件在检出时改成 CRLF，
+#       并在 git add 时输出 "LF will be replaced by CRLF" 警告。
+#       本文件是仓库级设置，优先级高于全局 core.autocrlf，且对所有协作者生效。
+#
+# 策略：一律以 LF 存入版本库，也一律以 LF 检出（eol=lf）。
+#       这样 Linux/CI、macOS、Windows 三端得到的工作区文件完全一致，
+#       diff 不再因换行符产生噪声。仅 Windows 专用脚本保留 CRLF。
+#
+# 注意：不要为此修改全局 core.autocrlf —— 那会影响你机器上的所有仓库。
+# ============================================================================
+
+# --- 默认规则：自动识别文本，统一 LF -------------------------------------
+* text=auto eol=lf
+
+# --- 显式声明文本类型（防止被误判为二进制而跳过换行符规范化）--------------
+*.py       text eol=lf
+*.pyi      text eol=lf
+*.ipynb    text eol=lf
+*.yaml     text eol=lf
+*.yml      text eol=lf
+*.json     text eol=lf
+*.md       text eol=lf
+*.txt      text eol=lf
+*.rst      text eol=lf
+*.toml     text eol=lf
+*.ini      text eol=lf
+*.cfg      text eol=lf
+*.env      text eol=lf
+*.example  text eol=lf
+*.sh       text eol=lf
+*.sql      text eol=lf
+Makefile   text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# --- Windows 专用脚本必须保留 CRLF --------------------------------------
+# 用 LF 的 .bat/.cmd 在 cmd.exe 下会出现换行错乱，故此处例外。
+*.bat      text eol=crlf
+*.cmd      text eol=crlf
+*.ps1      text eol=crlf
+*.psm1     text eol=crlf
+*.psd1     text eol=crlf
+
+# --- 二进制文件：禁止任何换行符转换与文本 diff ----------------------------
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.bmp      binary
+*.webp     binary
+*.svg      text eol=lf
+*.pdf      binary
+*.zip      binary
+*.gz       binary
+*.7z       binary
+*.tar      binary
+*.xlsx     binary
+*.xls      binary
+*.docx     binary
+*.pptx     binary
+*.woff     binary
+*.woff2    binary
+*.ttf      binary
+*.otf      binary
+*.exe      binary
+*.dll      binary
+*.so       binary
+*.pyd      binary
+
+# --- 语言与仓库统计微调 ---------------------------------------------------
+# 本地 mock 服务属测试辅助代码，不参与「项目主要语言」的统计口径判断。
+tools/*.py    linguist-vendored=false
+
+# 生成物/报告类文件在 GitHub 语言统计与 dif 视图中折叠展示（如有）。
+# reports/**    linguist-generated=true
