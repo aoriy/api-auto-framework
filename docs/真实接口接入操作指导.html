@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>真实接口接入操作指导</title>
+<style>
+  :root{
+    --bg:#faf9f7; --card:#ffffff; --line:#e5e3de; --line2:#d3d1c7;
+    --t1:#2c2c2a; --t2:#5f5e5a; --t3:#888780;
+    --hi:#a32d2d; --hi-bg:#fcebeb;
+    --mid:#854f0b; --mid-bg:#faeeda;
+    --ok:#0f6e56; --ok-bg:#e1f5ee;
+    --code-bg:#f6f5f1; --code-line:#e8e6e0;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--t1);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:14px;line-height:1.75}
+  .wrap{max-width:1180px;margin:0 auto;padding:40px 28px 80px;display:grid;
+    grid-template-columns:212px minmax(0,1fr);gap:36px;align-items:start}
+  .main{min-width:0}
+  h1{font-size:24px;font-weight:600;margin:0 0 6px}
+  h2{font-size:17px;font-weight:600;margin:46px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:14.5px;font-weight:600;margin:26px 0 8px}
+  h4{font-size:13.5px;font-weight:600;margin:18px 0 6px;color:var(--t2)}
+  p{margin:9px 0}
+  a{color:#185fa5;text-decoration:none}
+  a:hover{text-decoration:underline}
+  .sub{color:var(--t2);font-size:13px;margin:0 0 4px}
+  code{font-family:var(--mono);font-size:12.5px;background:#f1efe8;padding:1px 5px;border-radius:4px}
+  pre{background:var(--code-bg);border:1px solid var(--code-line);border-radius:9px;
+    padding:13px 15px;overflow-x:auto;margin:12px 0;line-height:1.65}
+  pre code{background:none;padding:0;font-size:12.5px;white-space:pre}
+  table{width:100%;border-collapse:collapse;margin:13px 0;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#f4f3ef;font-weight:600;font-size:12.5px;color:var(--t2);white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#fbfaf8}
+  blockquote{margin:13px 0;padding:10px 15px;background:#f4f3ef;
+    border-left:3px solid var(--line2);border-radius:0 8px 8px 0;color:var(--t2);font-size:13.2px}
+  blockquote p{margin:4px 0}
+  ul,ol{margin:9px 0;padding-left:22px}
+  li{margin:4px 0}
+  hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+  .toc{position:sticky;top:28px;font-size:12.5px;max-height:calc(100vh - 60px);overflow-y:auto;
+    border-right:1px solid var(--line);padding-right:14px}
+  .toc .toc-title{font-weight:600;color:var(--t2);font-size:11.5px;letter-spacing:.06em;
+    text-transform:uppercase;margin-bottom:8px}
+  .toc ul{list-style:none;padding:0;margin:0}
+  .toc li{margin:3px 0}
+  .toc a{color:var(--t2);display:block;padding:2px 0;border-radius:4px}
+  .toc a:hover{color:var(--t1);background:#f1efe8;text-decoration:none}
+  .toc ul ul{padding-left:11px}
+  .toc ul ul a{color:var(--t3);font-size:12px}
+  footer{margin-top:60px;padding-top:16px;border-top:1px solid var(--line);color:var(--t3);font-size:12px}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr;gap:0}.toc{position:static;
+    border-right:none;border-bottom:1px solid var(--line);padding:0 0 14px;max-height:none;margin-bottom:20px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="toc">
+    <div class="toc-title">目录</div>
+    <div class="toc">
+<ul>
+<li><a href="#_1">一、先看清框架长什么样</a><ul>
+<li><a href="#11">1.1 分层与依赖方向</a></li>
+<li><a href="#12">1.2 一次请求的完整数据流</a></li>
+<li><a href="#13-url">1.3 最终 URL 是怎么拼出来的</a></li>
+<li><a href="#14">1.4 文件职责速查</a></li>
+</ul>
+</li>
+<li><a href="#6">二、接入前必须拿到的 6 项契约</a></li>
+<li><a href="#_2">三、鉴权类型决策表</a></li>
+<li><a href="#_3">四、六个阶段的操作步骤</a><ul>
+<li><a href="#1">阶段 1 · 建立真实环境配置</a></li>
+<li><a href="#2">阶段 2 · 填写凭据</a></li>
+<li><a href="#3">阶段 3 · 定义账号与鉴权</a></li>
+<li><a href="#4">阶段 4 · 改写页面对象（核心工作）</a></li>
+<li><a href="#5">阶段 5 · 编排用例与套件</a></li>
+<li><a href="#6-mock">阶段 6 · 验收与 mock 退役</a></li>
+</ul>
+</li>
+<li><a href="#_4">五、接口对接规范（硬性约定）</a></li>
+<li><a href="#_5">六、用例编写规范</a></li>
+<li><a href="#_6">七、注意事项与陷阱</a></li>
+<li><a href="#_7">八、常见故障速查表</a></li>
+<li><a href="#_8">九、附录</a><ul>
+<li><a href="#91">9.1 抓真实接口契约的探针脚本</a></li>
+<li><a href="#92-5">9.2 新增一条接口（5 步）</a></li>
+<li><a href="#93-2">9.3 新增一个账号（2 步）</a></li>
+<li><a href="#94-1">9.4 新增一种鉴权方式（1 个类）</a></li>
+<li><a href="#95-1">9.5 新增一个环境（1 个文件）</a></li>
+<li><a href="#96">9.6 命令行参数速查</a></li>
+<li><a href="#97-3">9.7 接入真实项目前建议先还的 3 笔技术债</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+  </nav>
+  <div class="main">
+  <h1>真实接口接入操作指导</h1>
+  <p class="sub">api-auto-framework · 面向页面的多账号接口自动化框架 · 生成于 2026-10-14</p>
+<blockquote>
+<p><strong>适用场景</strong>：把本框架当前指向的 mock 服务（<code>127.0.0.1:18888/18889</code>）替换为你们真实的业务系统。</p>
+<p><strong>结论先行</strong>：需要改动的只有 <strong>4 类文件</strong>，共 6 个阶段。<code>core/</code>、<code>runner/</code>、<code>cases/base_case.py</code>、
+<code>core/auth/</code> 这些<strong>一行都不用改</strong>——这正是分层设计的兑现点。</p>
+<p>全文所有路径均相对 <code>api-auto-framework/</code> 根目录。</p>
+</blockquote>
+<hr />
+<h2 id="_1">一、先看清框架长什么样</h2>
+<h3 id="11">1.1 分层与依赖方向</h3>
+<pre><code>runner → cases → apis → core → config
+（调度）  （编排）  （接口） （内核） （配置）
+</code></pre>
+<p>依赖<strong>单向</strong>：下层永远不知道上层存在。<code>core/</code> 不认识任何具体接口，<code>apis/</code> 不认识任何流程。
+因此「换接口」只会波及 <code>apis/</code>，最多再碰 <code>config/</code>。</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>目录</th>
+<th>职责</th>
+<th>接真实接口时</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>配置层</td>
+<td><code>config/</code></td>
+<td>环境参数、账号与鉴权定义、凭据装载</td>
+<td><strong>要改</strong>（阶段 1-3）</td>
+</tr>
+<tr>
+<td>内核层</td>
+<td><code>core/</code></td>
+<td>请求唯一出口、鉴权注入、凭证托管、变量传递</td>
+<td><strong>不改</strong></td>
+</tr>
+<tr>
+<td>页面对象层</td>
+<td><code>apis/</code></td>
+<td>描述「这个页面有哪些接口」，一个接口一个方法</td>
+<td><strong>要改</strong>（阶段 4）</td>
+</tr>
+<tr>
+<td>用例编排层</td>
+<td><code>cases/</code></td>
+<td>组织业务流程、传数据、写断言</td>
+<td>少量改（阶段 5）</td>
+</tr>
+<tr>
+<td>调度层</td>
+<td><code>runner/</code></td>
+<td>装载 → 装配 → 顺序执行 → 汇总 → 退出码</td>
+<td><strong>不改</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="12">1.2 一次请求的完整数据流</h3>
+<p>以用例里的一行 <code>self.apply_page.submit_application("标题")</code> 为例：</p>
+<pre><code>① cases/*.py        调用页面方法，只有业务语义，没有一行凭证代码
+        ↓
+② BaseApi.__init__  确定本页面用哪个账号（account 类属性）
+                    并执行 self.client = ctx.client(self.principal)
+        ↓
+③ Context           转发给 SessionFactory（Context 自己不存任何账号状态）
+        ↓
+④ SessionFactory    这是「账号」与「鉴权」唯一的交汇点：
+                    按 (环境, 账号) 从 TokenStore 取凭证缓存
+                    ├─ 命中且未过期 → 直接复用
+                    └─ 未命中/已过期 → 用账号表里的 login 定义真正登录一次
+                    登录时强制走 auth=False 且用该账号自己的 Session，
+                    这样 Set-Cookie 才会落进它专属的 CookieJar
+        ↓
+⑤ HttpClient        所有请求的唯一出口：
+                    拼 URL（base_url + prefix + path）
+                    → strategy.prepare()（cookie 策略在此回填 CSRF 头）
+                    → strategy.apply()（token 类策略在此注入 header/query）
+                    → 发请求；401 自动重登一次；5xx / 网络异常按 retries 重试
+        ↓
+⑥ ApiResponse       统一响应封装，支持点号路径取值 data.items.0.id
+</code></pre>
+<p><strong>三条铁律</strong>（<code>core/session_factory.py</code> 顶部原文）：</p>
+<ol>
+<li>一个账号一个 <code>HttpClient</code>，一个 <code>HttpClient</code> 一个 <code>requests.Session</code> —— Cookie 不可能串。</li>
+<li>登录必须发生在该账号自己的 Session 上 —— 用公共 Session 登录是最隐蔽的串号来源。</li>
+<li>作废会话只作废本人 —— 401 重登不波及其它账号。</li>
+</ol>
+<h3 id="13-url">1.3 最终 URL 是怎么拼出来的</h3>
+<pre><code>     base_url              prefix                    path
+https://api.example.com  +  /api/v1  +  /flow/cases  =  完整 URL
+   （环境配置）           （环境配置或页面类）    （页面方法里写的）
+</code></pre>
+<p><code>prefix</code> 有<strong>三态语义</strong>，这是接真实接口时最容易踩的坑：</p>
+<table>
+<thead>
+<tr>
+<th>页面类里的写法</th>
+<th>含义</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>不写 <code>prefix</code></td>
+<td>继承环境配置的 <code>api_prefix</code></td>
+<td><code>/api/v1</code> + <code>/cases</code> → <code>/api/v1/cases</code></td>
+</tr>
+<tr>
+<td><code>prefix = ""</code></td>
+<td>明确「无前缀」，方法里的 path 即完整业务路径</td>
+<td><code>""</code> + <code>/flow/changes</code> → <code>/flow/changes</code></td>
+</tr>
+<tr>
+<td><code>prefix = "/xx"</code></td>
+<td>页面自带前缀，优先级最高，不受环境配置影响</td>
+<td><code>/orders</code> + <code>/x</code> → <code>/orders/x</code></td>
+</tr>
+</tbody>
+</table>
+<p>优先级：<strong>类属性 <code>prefix</code>（非 None）&gt; 环境变量 <code>API_PREFIX</code> &gt; 环境 yaml 的 <code>api_prefix</code></strong>。</p>
+<h3 id="14">1.4 文件职责速查</h3>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>写什么</th>
+<th>阶段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>config/env/&lt;env&gt;.yaml</code></td>
+<td>base_url、超时、重试、<code>api_prefix</code>、账号表路径、是否落盘</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>config/secrets.env</code></td>
+<td><strong>唯一明文凭据</strong>（已 gitignore）</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>config/accounts.&lt;env&gt;.yaml</code></td>
+<td>每个账号：怎么登录 + 怎么带鉴权（<strong>只写 <code>${变量名}</code></strong>）</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>apis/*.py</code></td>
+<td>每个页面：<code>account</code> + 每个接口一个方法</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>cases/*.py</code></td>
+<td>业务流程编排与断言</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>suites/*.yaml</code></td>
+<td>声明跑哪些用例、按什么顺序</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>tools/mock_server*.py</code></td>
+<td>本地 mock（真实接口接入后退役）</td>
+<td>6</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6">二、接入前必须拿到的 6 项契约</h2>
+<p>先把这 6 项信息凑齐再动手，能避免 80% 的返工。缺哪一项就去抓一次包（见 §9.1 的探针脚本）。</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>契约要素</th>
+<th>用来填哪些配置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>base_url</strong>（含协议与端口）</td>
+<td><code>env/&lt;env&gt;.yaml</code> 的 <code>base_url</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>URL 公共前缀</strong>（网关路径 / API 版本，如 <code>/api/v1</code>）</td>
+<td><code>env/&lt;env&gt;.yaml</code> 的 <code>api_prefix</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>登录接口</strong>：method + path + 请求体字段名</td>
+<td>账号表的 <code>login.method</code> / <code>login.path</code> / <code>login.json</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>凭证形态</strong>：Set-Cookie 还是响应体里的 token</td>
+<td>账号表的 <code>auth.type</code>（见 §3 决策表）</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>每个页面由哪个账号操作</strong></td>
+<td>页面类的 <code>account</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>每个接口的 method + path + 入参 + 期望状态码</strong></td>
+<td>页面方法内部</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>参考实现</strong>：本项目 8 个页面模板的 mock 契约见 <code>README.md</code> 第九节；
+账号表的完整写法示例见 <code>config/accounts.session.yaml</code>。</p>
+</blockquote>
+<hr />
+<h2 id="_2">三、鉴权类型决策表</h2>
+<p><code>auth.type</code> 的候选值由 <code>core/auth/strategies.py</code> 注册，当前共 7 种。<strong>照着「凭证放在哪」选</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>现象（抓包看到什么）</th>
+<th><code>auth.type</code></th>
+<th>关键配置</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>登录响应带 <code>Set-Cookie: SESSION=...</code></td>
+<td><code>cookie</code></td>
+<td><code>session_cookie</code>、<code>csrf_cookie</code>、<code>csrf_header</code>、<code>assume_ttl</code></td>
+<td><strong>本框架主用</strong>；写操作自动回填 CSRF</td>
+</tr>
+<tr>
+<td><code>Authorization: Bearer &lt;token&gt;</code></td>
+<td><code>bearer</code></td>
+<td><code>header</code>、<code>prefix</code>、<code>token_path</code>、<code>expires_path</code></td>
+<td></td>
+</tr>
+<tr>
+<td>自定义头，如 <code>X-Token: &lt;token&gt;</code></td>
+<td><code>header</code></td>
+<td><code>header</code>、<code>prefix</code></td>
+<td><code>header</code> 必填，否则报 ConfigError</td>
+</tr>
+<tr>
+<td><code>?access_token=&lt;token&gt;</code></td>
+<td><code>query</code></td>
+<td><code>key</code></td>
+<td>凭证会进 URL，注意日志与网关缓存</td>
+</tr>
+<tr>
+<td><code>Authorization: Basic &lt;base64&gt;</code></td>
+<td><code>basic</code></td>
+<td><code>username</code>、<code>password</code>、<code>header</code></td>
+<td><strong>不需要登录</strong>，直接吃凭据</td>
+</tr>
+<tr>
+<td><code>X-Timestamp</code> + <code>X-Signature</code></td>
+<td><code>signature</code></td>
+<td><code>algorithm</code>、<code>ts_header</code>、<code>header</code></td>
+<td>内置 HMAC 骨架，真实算法差异大时需扩展</td>
+</tr>
+<tr>
+<td>完全公开，不带任何凭证</td>
+<td><code>none</code></td>
+<td>—</td>
+<td>不登录、不注入；收到 401 <strong>不会</strong>触发重登</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>token_path</code> 怎么写</strong>：它是在登录响应 JSON 里的<strong>点号路径</strong>，支持列表下标。</p>
+<table>
+<thead>
+<tr>
+<th>登录响应片段</th>
+<th><code>token_path</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{"data": {"access_token": "abc"}}</code></td>
+<td><code>data.access_token</code></td>
+</tr>
+<tr>
+<td><code>{"token": "abc"}</code></td>
+<td><code>token</code></td>
+</tr>
+<tr>
+<td><code>{"result": {"items": [{"jwt": "abc"}]}}</code></td>
+<td><code>result.items.0.jwt</code></td>
+</tr>
+</tbody>
+</table>
+<p>取值失败会抛 <code>AuthError</code> 并把实际响应前 200 字符打出来，定位很快。</p>
+<hr />
+<h2 id="_3">四、六个阶段的操作步骤</h2>
+<h3 id="1">阶段 1 · 建立真实环境配置</h3>
+<p><strong>新增</strong> <code>config/env/staging.yaml</code>（不要改 <code>dev.yaml</code> / <code>session.yaml</code>，保留 mock 环境用于框架自检）：</p>
+<pre><code class="language-yaml"># 真实环境（非敏感）。敏感凭据一律放 config/secrets.env
+base_url: https://api.example.com
+
+timeout: 15          # 真实网络比 localhost 慢，建议 15 起
+retries: 2
+backoff: 0.5
+verify_ssl: true     # ★ 真实环境务必改回 true；mock 才用 false
+
+# 页面 URL 公共前缀：只在这一处定义，页面类共用
+api_prefix: /api/v1
+
+# 账号表：真实环境单独一份，不要与 mock 环境的混用
+accounts_file: config/accounts.staging.yaml
+
+# 会话落盘 = 明文会话写磁盘。真实环境建议 false
+persist_credentials: false
+
+log_level: INFO
+</code></pre>
+<p><strong>验证</strong></p>
+<pre><code class="language-bash">python runner/main.py --env staging --list-accounts
+</code></pre>
+<p>期望：打印账号表并把「已支持的鉴权类型」列出来。若报 <code>找不到环境配置</code> 说明文件名拼错
+（环境名即文件名，<code>--env staging</code> ↔ <code>config/env/staging.yaml</code>）。</p>
+<hr />
+<h3 id="2">阶段 2 · 填写凭据</h3>
+<p><strong>改</strong> <code>config/secrets.env</code>（该文件已在 <code>.gitignore</code>，不会进版本库）。</p>
+<ul>
+<li>一行一个 <code>KEY=VALUE</code>，<strong>不要写 <code>export</code></strong></li>
+<li>值两侧的引号会被自动剥掉</li>
+<li>变量名必须匹配 <code>[A-Za-z_][A-Za-z0-9_]*</code>（不能以数字开头、不能带连字符），否则 <code>${}</code> 不会被替换</li>
+<li>想新增账号就新增键，<strong>建议按系统命名</strong>，别再叫 <code>TEST34_PASSWORD</code> 这种 mock 遗留名</li>
+</ul>
+<p><strong>CI 里的做法</strong>：同名真实环境变量优先。<code>config/settings.py</code> 用的是 <code>os.environ.setdefault</code>，
+所以 CI Secret 不会被本地文件覆盖；反过来说——<strong>如果你 shell 里已经存在同名变量，改 <code>secrets.env</code> 不会生效</strong>，
+排查「明明改了却没变」先查这个。</p>
+<p><strong>验证</strong>：故意把某个变量删掉再跑，应当得到明确报错而不是静默失败：</p>
+<pre><code>[框架级错误] ConfigError: 凭据缺失：环境变量 XXX_PASSWORD 未定义。
+请在 config/secrets.env 里补齐，或在 CI 中作为 Secret 注入。
+</code></pre>
+<hr />
+<h3 id="3">阶段 3 · 定义账号与鉴权</h3>
+<p><strong>新增</strong> <code>config/accounts.staging.yaml</code>。结构分两段：<code>defaults</code>（公共默认）+ <code>accounts</code>（逐账号覆盖）。</p>
+<blockquote>
+<p>⚠️ 顶层键必须是 <strong><code>accounts:</code></strong>（旧名 <code>roles:</code> 也认，但推荐新名）。
+这个键名<strong>不是配置项</strong>，它硬编码在 <code>config/settings.py:131</code> 的字典查询里——改名字必须改代码。
+<code>path</code> 必须用<strong>绝对路径</strong>（<code>${ROOT}</code> 占位见下），相对路径会拼在 <code>root_dir</code> 上。</p>
+</blockquote>
+<pre><code class="language-yaml"># ============================================================
+# 真实环境账号注册表
+# 绝对不写明文口令，只用 ${VAR} 引用 config/secrets.env
+# ============================================================
+
+defaults:
+  login:
+    method: POST
+    path: /api/v1/auth/login        # ★ 相对 base_url 的 path（不含 base_url）
+  auth:
+    type: cookie
+    session_cookie: JSESSIONID      # 按真实系统的 Cookie 名改
+    csrf_cookie: csrftoken
+    csrf_header: X-CSRFToken
+    assume_ttl: 1800
+
+accounts:
+  # ---------- 会话 Cookie 型 ----------
+  creator:
+    role: creator
+    description: 流程创建人
+    login:
+      json:
+        username: ${STG_CREATOR_USER}
+        password: ${STG_CREATOR_PWD}
+        # 真实系统常需要额外字段，按契约加即可：
+        # captcha: &quot;&quot;
+        # tenant: &quot;default&quot;
+
+  # ---------- Bearer Token 型 ----------
+  sre_expert_a:
+    role: sre_expert
+    description: SRE 专家 A
+    login:
+      method: POST
+      path: /api/v1/oauth/token     # 可覆盖 defaults 的 path
+      json:
+        client_id: ${STG_SRE_CLIENT_ID}
+        client_secret: ${STG_SRE_CLIENT_SECRET}
+    auth:
+      type: bearer
+      header: Authorization
+      prefix: &quot;Bearer &quot;
+      token_path: data.access_token
+      expires_path: data.expires_in
+
+  # ---------- 无凭证 ----------
+  anon:
+    role: guest
+    login: null
+    auth:
+      type: none
+</code></pre>
+<p><strong>登录请求体</strong>：<code>login</code> 段支持三选一，按真实接口选一个即可（同时写多个时按 <code>json</code> → <code>data</code> → <code>params</code> 取第一个）：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>写法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JSON body（最常见）</td>
+<td><code>json: { username: ..., password: ... }</code></td>
+</tr>
+<tr>
+<td>表单提交 <code>application/x-www-form-urlencoded</code></td>
+<td><code>data: { username: ..., password: ... }</code></td>
+</tr>
+<tr>
+<td>参数拼在 URL 上</td>
+<td><code>params: { ... }</code></td>
+</tr>
+<tr>
+<td>需要额外请求头</td>
+<td><code>headers: { X-Tenant: xxx }</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>验证</strong></p>
+<pre><code class="language-bash">python runner/main.py --env staging --account creator --fresh-token
+</code></pre>
+<p>期望看到 <code>登录账号 creator  POST /api/v1/auth/login</code> → <code>登录成功</code>。失败会明确区分：</p>
+<ul>
+<li><code>AuthError: 账号 'creator' 登录失败 HTTP 401: ...</code> → 凭据或字段名不对</li>
+<li><code>AuthError: 登录响应中找不到凭证路径 'data.access_token'</code> → <code>token_path</code> 写错</li>
+<li><code>ConfigError: 未知鉴权方式 'xxx'</code> → <code>auth.type</code> 拼错</li>
+</ul>
+<hr />
+<h3 id="4">阶段 4 · 改写页面对象（核心工作）</h3>
+<p>对 <code>apis/</code> 下每个页面类，<strong>只动两处</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>替换点</th>
+<th>改什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① <code>account</code></td>
+<td>这个页面实际由哪个账号操作</td>
+</tr>
+<tr>
+<td>② 方法内部</td>
+<td><code>path</code> 与入参，换成真实接口的</td>
+</tr>
+</tbody>
+</table>
+<p><strong>改造前（mock 模板）</strong></p>
+<pre><code class="language-python">class ApplyPageApi(BaseApi):
+    account = &quot;test1&quot;
+
+    def submit_application(self, title, **extra):
+        payload = {&quot;title&quot;: title, **extra}
+        return self.post(&quot;/cases&quot;, json=self.ctx.interpolate(payload))
+</code></pre>
+<p><strong>改造后（真实接口）</strong></p>
+<pre><code class="language-python">class ApplyPageApi(BaseApi):
+    account = &quot;creator&quot;          # ① 换成真实环境的账号名
+
+    def submit_application(self, title, product, priority=&quot;P2&quot;, **extra):
+        &quot;&quot;&quot;提交问题处理申请。&quot;&quot;&quot;
+        payload = {                       # ② 字段名按真实契约对齐
+            &quot;title&quot;: title,
+            &quot;product&quot;: product,
+            &quot;priority&quot;: priority,
+            **extra,
+        }
+        return self.post(&quot;/cases&quot;, json=self.ctx.interpolate(payload))
+</code></pre>
+<p><strong>契约没对齐时的常见形态对照</strong></p>
+<table>
+<thead>
+<tr>
+<th>契约形态</th>
+<th>页面方法写法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>查询参数</td>
+<td><code>return self.get("/cases", params=self.ctx.interpolate(params))</code></td>
+</tr>
+<tr>
+<td>路径参数</td>
+<td><code>return self.post(self.ctx.interpolate(f"/cases/{case_id}/expert-review"))</code></td>
+</tr>
+<tr>
+<td>表单提交</td>
+<td><code>return self.post("/cases", data=payload)</code></td>
+</tr>
+<tr>
+<td>文件上传</td>
+<td><code>return self.post("/attachments", files={"file": open(path, "rb")})</code></td>
+</tr>
+<tr>
+<td>需要幂等键</td>
+<td><code>return self.post("/cases", json=payload, headers={"Idempotency-Key": key})</code></td>
+</tr>
+<tr>
+<td>无需鉴权的公开接口</td>
+<td><code>return self.get("/public/notice", auth=False)</code></td>
+</tr>
+</tbody>
+</table>
+<p>完成后跑一次冒烟：</p>
+<pre><code class="language-bash">python runner/main.py --env staging --suite all_pages
+</code></pre>
+<hr />
+<h3 id="5">阶段 5 · 编排用例与套件</h3>
+<p><strong>用例层通常不用改。</strong> 它只认「页面对象 + 方法名」，不认路径、不认账号、不认凭证。
+只有当接口的<strong>状态码或响应结构</strong>变了，才需要同步改断言。</p>
+<p><strong>改断言</strong>（<code>cases/all_pages_case.py</code> 等）：</p>
+<pre><code class="language-python"># 真实接口返回 200 而不是 201
+self.check(&quot;① 申请页面 · 提交申请&quot;, created, 200,
+           expect=field(&quot;data.status&quot;, &quot;applied&quot;))
+
+# 真实系统的字段路径不同时，改 field 的第一个参数即可
+self.check(&quot;回查单据详情&quot;, detail, 200, expect=field(&quot;result.caseNo&quot;))
+</code></pre>
+<p><strong>新增套件</strong>：在 <code>suites/</code> 下建 <code>&lt;name&gt;.yaml</code>：</p>
+<pre><code class="language-yaml">name: 真实环境冒烟
+description: 覆盖 8 个页面的主链路
+cases:
+  - cases.all_pages_case:AllPagesFlowCase
+</code></pre>
+<p>覆盖清单（建议按此顺序推进，每步都可独立验证）：</p>
+<table>
+<thead>
+<tr>
+<th>待办</th>
+<th>文件</th>
+<th>改完怎么验</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>8 个页面类替换</td>
+<td><code>apis/*_page.py</code></td>
+<td><code>--env staging --suite all_pages</code></td>
+</tr>
+<tr>
+<td>账号与角色对齐</td>
+<td><code>config/accounts.staging.yaml</code></td>
+<td><code>--env staging --suite account_roles</code>（需同步改 <code>EXPECTED_ROLES</code>）</td>
+</tr>
+<tr>
+<td>多账号隔离仍成立</td>
+<td><code>cases/multi_account_flow_case.py</code></td>
+<td><code>--env staging --suite multi_account</code></td>
+</tr>
+<tr>
+<td>补齐业务用例</td>
+<td>新建 <code>cases/*_case.py</code> + <code>suites/*.yaml</code></td>
+<td>对应套件全绿</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong><code>cases/account_roles_case.py</code> 里的 <code>EXPECTED_ROLES</code> 是硬编码的 mock 账号名</strong>
+（<code>test1/test34/test38/test666</code>）。接真实环境时，要么改这个常量，要么把这个用例从真实环境套件里移除。</p>
+</blockquote>
+<hr />
+<h3 id="6-mock">阶段 6 · 验收与 mock 退役</h3>
+<p><strong>验收清单</strong>（逐条打勾，缺一不可）：</p>
+<pre><code class="language-bash"># 1) 配置自检：账号表能读、鉴权类型能识别
+python runner/main.py --env staging --list-accounts
+
+# 2) 凭据自检：每个账号都能独立登录（--fresh-token 绕开缓存，确保不是复用旧凭证）
+python runner/main.py --env staging --account creator --account sre_expert_a --fresh-token
+
+# 3) 主链路：8 个页面走通
+python runner/main.py --env staging --suite all_pages
+
+# 4) 多账号隔离：会话不串、CSRF 与账号绑定、单账号自愈
+python runner/main.py --env staging --suite multi_account
+
+# 5) 退出码正确（CI 直接依赖）
+python runner/main.py --env staging --suite all_pages; echo &quot;exit=$?&quot;
+# 期望 0=全通过 / 1=有失败步骤 / 2=框架级错误
+</code></pre>
+<p><strong>mock 退役</strong>（确认上述全绿之后再做）：</p>
+<ol>
+<li><code>config/env/dev.yaml</code>、<code>config/env/session.yaml</code> 与 <code>tools/mock_server*.py</code> 可以保留做框架自检——
+   它们不碰真实系统，删掉反而失去「框架本身还能跑」的基线。<strong>建议保留</strong>。</li>
+<li>若决定删除，注意 <code>config/settings.py</code> 的 <code>accounts_file</code> 回落默认值指向 <code>config/roles.yaml</code>，
+   别把文件删得不一致。</li>
+<li><code>runtime/</code> 与 <code>reports/</code> 是运行产物，可随时删除，删了会自动重建。</li>
+</ol>
+<hr />
+<h2 id="_4">五、接口对接规范（硬性约定）</h2>
+<p>页面方法是「接口的声明」，写得一致才有可维护性。以下 8 条请当成 lint 规则执行。</p>
+<p><strong>① 一个页面一个文件、一个接口一个方法。</strong>
+文件 <code>xxx_page.py</code> / 类 <code>XxxPageApi</code>；新增页面后要在 <code>apis/__init__.py</code> 里导出。</p>
+<p><strong>② 方法体里禁止任何凭证代码。</strong>
+不许出现 <code>headers["Authorization"]</code>、不许自己 <code>requests.post</code>、不许读 <code>secrets.env</code>。
+鉴权在 <code>BaseApi.__init__</code> 的那一行就已经挂好了。</p>
+<p><strong>③ 路径只写相对路径。</strong>
+不要写 <code>https://</code>、不要重复 <code>base_url</code>、不要重复页面前缀。
+前缀要么继承环境配置（不写 <code>prefix</code>），要么由类属性声明，<strong>不要在方法里拼</strong>。</p>
+<p><strong>④ 需要临时换账号用 <code>as_account()</code>，不要改全局状态。</strong></p>
+<pre><code class="language-python">return self.as_account(&quot;ops_admin&quot;).post(f&quot;/cart/orders/{order_id}/approve&quot;)
+</code></pre>
+<p>它返回<strong>新实例</strong>，不会污染当前对象的默认账号。</p>
+<p><strong>⑤ 入参一律过 <code>ctx.interpolate()</code>。</strong>
+这样 <code>${case_id}</code> 这类跨步骤变量才能被替换：</p>
+<pre><code class="language-python">return self.post(self.ctx.interpolate(f&quot;/cases/{case_id}/expert-review&quot;),
+                 json=self.ctx.interpolate(payload))
+</code></pre>
+<p><strong>⑥ 统一返回 <code>ApiResponse</code>，不要在页面层做断言。</strong>
+页面方法只负责「发请求 + 返回响应」；断言属于用例层（<code>self.check(...)</code>）。
+页面层做了断言，报告里就看不到步骤粒度的失败原因。</p>
+<p><strong>⑦ 写操作要显式体现副作用。</strong>
+方法名用动词（<code>submit_x</code> / <code>approve</code> / <code>deploy</code>），并在 docstring 里写清前置状态约束
+（例如「必须先通过评审，否则 409」），方便用例层设计反例。</p>
+<p><strong>⑧ 不臆造权限矩阵。</strong>
+mock 侧只做了「已登录 + 阶段顺序」两道门禁。你们真实系统的角色权限确定后，
+再往用例里补越权反例（403/409），不要在页面层做角色判断。</p>
+<hr />
+<h2 id="_5">六、用例编写规范</h2>
+<p><strong>执行顺序有两套规则，互不冲突：</strong></p>
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>用例之间</td>
+<td><code>suites/*.yaml</code> 里 <code>cases:</code> 列表的顺序</td>
+</tr>
+<tr>
+<td>用例内部</td>
+<td>方法名字典序 → 用 <code>test_01_</code> / <code>test_02_</code> 前缀控制</td>
+</tr>
+</tbody>
+</table>
+<p>生命周期：<code>setup_case()</code> → <code>test_01_*</code> → … → <code>teardown_case()</code>。
+<strong>单个步骤失败不中断整条流程</strong>，所有结果都进 <code>CaseResult</code>，一次运行看到全貌。</p>
+<p><strong>取页面对象用带缓存的 <code>self.api()</code></strong>（同类 + 同账号只构造一次）：</p>
+<pre><code class="language-python">def setup_case(self) -&gt; None:
+    self.shop_a = self.api(ShopApi)                        # 用页面类默认账号
+    self.shop_b = self.api(ShopApi, account=&quot;buyer_b&quot;)     # 换成账号 B
+    self.admin  = self.api(ShopApi, account=&quot;ops_admin&quot;)
+</code></pre>
+<p><strong>跨步骤传数据用 <code>ctx.set</code> / <code>${var}</code></strong>：</p>
+<pre><code class="language-python">case_id = created.get(&quot;data.id&quot;)
+self.ctx.set(&quot;case_id&quot;, case_id)                  # 存
+...
+self.expert_review_page.submit_expert_review(&quot;${case_id}&quot;)   # 取
+</code></pre>
+<p><strong>记录结果有两种，按是否走 HTTP 分开用：</strong></p>
+<pre><code class="language-python">self.check(&quot;步骤名&quot;, response, 200, expect=field(&quot;data.status&quot;, &quot;applied&quot;))  # 有请求
+self.mark(&quot;步骤名&quot;, 条件, &quot;说明文本&quot;)                                        # 无请求
+</code></pre>
+<p><strong>内置断言</strong>（<code>core/assertions.py</code>）：<code>status(code)</code>、<code>ok()</code>、<code>field(path, expected, exists=...)</code>、
+<code>faster_than(ms)</code>、<code>all_of(*checks)</code>。<code>field</code> 不传 expected 时表示「存在且非空」。</p>
+<p><strong><code>teardown_case()</code> 目前 5 个用例都没覆写 —— 真实环境必须补上</strong>，否则会持续产生脏数据。
+真实系统的清理通常是软删除，建议约定：</p>
+<pre><code class="language-python">def teardown_case(self) -&gt; None:
+    case_id = self.ctx.get(&quot;case_id&quot;)
+    if case_id:
+        resp = self.apply_page.client.delete(f&quot;/api/v1/cases/{case_id}&quot;)
+        self.mark(&quot;清理测试单据&quot;, resp.status_code in (200, 204, 404),
+                  f&quot;HTTP {resp.status_code}&quot;)
+</code></pre>
+<hr />
+<h2 id="_6">七、注意事项与陷阱</h2>
+<p>以下每条都是本项目<strong>实际踩过或实测确认存在</strong>的问题，按真实环境接入的影响度排序。</p>
+<p><strong>1. 前缀漏配 = 大面积 404。</strong>
+环境文件里没写 <code>api_prefix</code> 时值为空，未声明 <code>prefix</code> 的页面会直接拼出 <code>/cases</code>。
+启动日志会打印当前生效前缀，为空时给 WARNING。<strong>看到 WARNING 先别跑用例。</strong></p>
+<p><strong>2. Git Bash 下用环境变量传前缀会被改写。</strong>
+<code>API_PREFIX=/api/v1 python ...</code> 里 MSYS 会把 <code>/api/v1</code> 当路径转换。需要
+<code>MSYS_NO_PATHCONV=1</code>，或干脆改配置文件。</p>
+<p><strong>3. 环境与套件是隐式耦合的，没有预检。</strong>
+<code>OrderApi</code> / <code>UserApi</code> / <code>ProductApi</code> 声明的是 mock 环境的账号（<code>merchant</code>/<code>admin</code>/<code>guest</code>），
+8 个 <code>*_page.py</code> 声明的是另一批（<code>test1</code>/<code>test34</code>…）。若拿真实环境账号表去跑 dev 套件，
+会在<strong>第一次构造页面对象时</strong>抛 <code>RoleNotDefined</code>，而不是启动时。接真实环境时请一个环境配一份账号表。</p>
+<p><strong>4. 同角色不同账号必须用不同的账号名。</strong>
+<code>buyer_a</code> / <code>buyer_b</code> 这类「同角色多账号」是四眼原则（创建人不能自己评审）唯一可测的前提。
+合并成「一个账号多角色」会让双人复核规则再也无法构造反例。</p>
+<p><strong>5. 切账号最容易漏的一步是 CSRF。</strong>
+CSRF token 与 session 绑定，换账号必须跟着换。框架在 <code>CookieAuth.prepare()</code> 里自动回填，
+但如果你手写 <code>auth=False</code> 绕过它（像 <code>multi_account_flow_case.py:121</code> 那样），就必须自己保证配对。</p>
+<p><strong>6. <code>persist_credentials: true</code> = 明文会话落盘。</strong>
+会话模式下落盘就是把 Cookie 写进 <code>runtime/credentials.&lt;env&gt;.json</code>。真实环境务必设 <code>false</code>。</p>
+<p><strong>7. 报告会写凭证前 8 位。</strong>
+<code>runner/main.py</code> 的 <code>build_report()</code> 会把 token 前 8 字符写进 JSON 报告
+（cookie 类则写 Cookie 名列表，不写值）。真实环境的报告若会外发，需要处理这一处。</p>
+<p><strong>8. 401 重登只对「本来就要凭证」的账号生效。</strong>
+<code>none</code> / <code>basic</code> 收到 401 不会重登（重登也没意义），这是刻意设计，不是 bug。</p>
+<p><strong>9. <code>--fresh-token</code> 的语义。</strong>
+不带这个参数时，<code>ctx.login()</code> <strong>默认复用缓存</strong>；只有 <code>--fresh-token</code> 才强制重新登录。
+排查「凭据改了没生效」时，先加这个参数排除缓存干扰。</p>
+<p><strong>10. 凭证变量优先级的反直觉点。</strong>
+<code>settings.py</code> 用 <code>os.environ.setdefault</code>，所以<strong>真实环境变量优先于 <code>config/secrets.env</code></strong>。
+本地改文件不生效时，先 <code>echo $XXX_PASSWORD</code> 看看 shell 里是不是已经有一份。</p>
+<p><strong>11. <code>verify_ssl</code> 默认值是 <code>false</code>。</strong>
+<code>settings.py</code> 里 <code>data.get("verify_ssl", False)</code>。真实环境请在环境 yaml 里显式写 <code>verify_ssl: true</code>。</p>
+<p><strong>12. 没有重试上限保护的自定义脚本不要进 CI。</strong>
+框架自身的重试只覆盖网络异常与 5xx，且 <code>retries</code> 是有限次；不要在页面方法里再套循环重试。</p>
+<hr />
+<h2 id="_7">八、常见故障速查表</h2>
+<table>
+<thead>
+<tr>
+<th>症状</th>
+<th>根因</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动即 <code>找不到环境配置</code></td>
+<td>环境名与文件名不一致</td>
+<td><code>--env X</code> 需要 <code>config/env/X.yaml</code></td>
+</tr>
+<tr>
+<td><code>RoleNotDefined: 未定义的账号 'xxx'</code></td>
+<td>页面声明的账号不在当前环境的账号表里</td>
+<td>检查环境 yaml 的 <code>accounts_file</code>，或改页面类的 <code>account</code></td>
+</tr>
+<tr>
+<td><code>ConfigError: 凭据缺失：环境变量 X 未定义</code></td>
+<td><code>secrets.env</code> 缺键，或 CI Secret 名不符</td>
+<td>补键；注意变量名不能带连字符</td>
+</tr>
+<tr>
+<td><code>ConfigError: 未知鉴权方式 'xxx'</code></td>
+<td><code>auth.type</code> 拼错</td>
+<td>用 <code>--list-accounts</code> 看已支持的类型</td>
+</tr>
+<tr>
+<td><code>AuthError: 登录响应中找不到凭证路径</code></td>
+<td><code>token_path</code> 与真实响应结构不符</td>
+<td>按 §9.1 抓一次登录响应</td>
+</tr>
+<tr>
+<td>大面积 404，路径少了前缀</td>
+<td><code>api_prefix</code> 漏配</td>
+<td>补环境 yaml；启动日志有 WARNING</td>
+</tr>
+<tr>
+<td>大面积 404，路径多了前缀</td>
+<td>页面类写了 <code>prefix</code> 而环境也有 <code>api_prefix</code></td>
+<td>两者只保留一个；或改成 <code>prefix = ""</code></td>
+</tr>
+<tr>
+<td>写操作 403</td>
+<td>CSRF 头名/Cookie 名与真实系统不符</td>
+<td>对齐 <code>csrf_header</code> / <code>csrf_cookie</code></td>
+</tr>
+<tr>
+<td>偶发 401 / 会话中途失效</td>
+<td><code>assume_ttl</code> 设得比真实 TTL 长</td>
+<td>调小 <code>assume_ttl</code>，或设为 0 交给 401 兜底</td>
+</tr>
+<tr>
+<td>所有请求都超时</td>
+<td><code>base_url</code> 环境不可达 / 需走代理</td>
+<td>先 <code>curl -i &lt;base_url&gt;/health</code> 验证连通性</td>
+</tr>
+<tr>
+<td>断言全挂在状态码上</td>
+<td>真实接口返回 200 而非模板里的 201</td>
+<td>改 <code>self.check(..., expect_status=N)</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="_8">九、附录</h2>
+<h3 id="91">9.1 抓真实接口契约的探针脚本</h3>
+<p>接真实接口前，先用它把「登录响应的形状」和「凭证放在哪」确认下来（<strong>不依赖框架</strong>）。</p>
+<p>保存为 <code>tools/probe_login.py</code>，然后 <code>python tools/probe_login.py</code>：</p>
+<pre><code class="language-python">&quot;&quot;&quot;真实接口契约探针：看清登录响应的结构、Cookie 与状态码。
+
+只用于前期调研，看清结构后请把结论写进 config/accounts.&lt;env&gt;.yaml。
+&quot;&quot;&quot;
+from __future__ import annotations
+
+import json
+import os
+
+import requests
+
+BASE = os.environ[&quot;PROBE_BASE_URL&quot;]          # 例：https://api.example.com
+PATH = os.environ.get(&quot;PROBE_LOGIN_PATH&quot;, &quot;/auth/login&quot;)
+USER = os.environ[&quot;PROBE_USERNAME&quot;]
+PWD = os.environ[&quot;PROBE_PASSWORD&quot;]
+
+with requests.Session() as s:
+    resp = s.post(f&quot;{BASE.rstrip('/')}{PATH}&quot;,
+                  json={&quot;username&quot;: USER, &quot;password&quot;: PWD},
+                  timeout=15, verify=True)
+
+print(&quot;状态码:&quot;, resp.status_code)
+print(&quot;--- 响应 Cookie（决定 auth.type=cookie 还是 token 类）---&quot;)
+for c in s.cookies:
+    print(f&quot;  {c.name} = &lt;{len(c.value)} 字符&gt;  domain={c.domain}&quot;)
+print(&quot;--- 关键响应头 ---&quot;)
+for k in (&quot;Content-Type&quot;, &quot;Set-Cookie&quot;, &quot;X-Request-Id&quot;):
+    if k in resp.headers:
+        print(f&quot;  {k}: {resp.headers[k][:120]}&quot;)
+print(&quot;--- 响应体结构（已脱敏：只打印路径与类型）---&quot;)
+
+
+def shape(node, prefix=&quot;&quot;):
+    if isinstance(node, dict):
+        for k, v in node.items():
+            shape(v, f&quot;{prefix}{k}.&quot;)
+    elif isinstance(node, list):
+        print(f&quot;  {prefix[:-1]}: list[{len(node)}]&quot;)
+        if node:
+            shape(node[0], f&quot;{prefix}0.&quot;)
+    else:
+        print(f&quot;  {prefix[:-1]}: {type(node).__name__} (长度 {len(str(node))})&quot;)
+
+
+try:
+    shape(resp.json())
+except ValueError:
+    print(f&quot;  非 JSON 响应，前 200 字符: {resp.text[:200]}&quot;)
+
+print(&quot;\n对照 config/accounts.&lt;env&gt;.yaml：&quot;)
+print(&quot;  有 Set-Cookie  → auth.type: cookie&quot;)
+print(&quot;  响应体里有 token → auth.type: bearer / header / query，token_path 按上面打印的路径填&quot;)
+</code></pre>
+<p>用法：</p>
+<pre><code class="language-bash">export PROBE_BASE_URL=https://api.example.com
+export PROBE_LOGIN_PATH=/api/v1/auth/login
+export PROBE_USERNAME=...
+export PROBE_PASSWORD=...
+python tools/probe_login.py
+</code></pre>
+<h3 id="92-5">9.2 新增一条接口（5 步）</h3>
+<ol>
+<li>在对应页面类里加一个方法（照抄已有方法的形状）</li>
+<li>路径只写相对路径；入参过 <code>ctx.interpolate()</code></li>
+<li>返回 <code>ApiResponse</code>，不在页面层断言</li>
+<li>在用例里的对应 <code>test_0N_*</code> 方法里调它并用 <code>self.check(...)</code> 记录</li>
+<li>跑对应套件验证</li>
+</ol>
+<h3 id="93-2">9.3 新增一个账号（2 步）</h3>
+<ol>
+<li><code>config/accounts.&lt;env&gt;.yaml</code> 的 <code>accounts:</code> 下加一段</li>
+<li><code>config/secrets.env</code> 补对应变量</li>
+</ol>
+<pre><code class="language-bash">python runner/main.py --env &lt;env&gt; --list-accounts        # 确认已登记
+</code></pre>
+<h3 id="94-1">9.4 新增一种鉴权方式（1 个类）</h3>
+<pre><code class="language-python">from core.auth.base import AuthStrategy
+from core.auth.registry import register
+
+@register
+class MyAuth(AuthStrategy):
+    type = &quot;myauth&quot;
+
+    def apply(self, *, headers, params, cookies, token, method, url) -&gt; None:
+        headers[&quot;X-My-Auth&quot;] = f&quot;v2:{token}&quot;
+</code></pre>
+<p>账号表里写 <code>auth: { type: myauth }</code> 立刻可用，框架其它代码零改动。
+<code>token_path</code> / <code>expires_path</code> 的抓取由基类统一处理，子类不用管。</p>
+<h3 id="95-1">9.5 新增一个环境（1 个文件）</h3>
+<p>复制 <code>config/env/staging.yaml</code> 改名即可。环境名即文件名，<code>--env &lt;name&gt;</code> 直接用。</p>
+<h3 id="96">9.6 命令行参数速查</h3>
+<pre><code class="language-bash">python runner/main.py --env &lt;环境&gt; --suite &lt;套件&gt;
+python runner/main.py --env &lt;环境&gt; --list-accounts          # 只看账号与鉴权方式
+python runner/main.py --env &lt;环境&gt; --account A --account B  # 预热指定账号
+python runner/main.py --env &lt;环境&gt; --fresh-token            # 忽略缓存强制重登
+</code></pre>
+<p>退出码：<code>0</code> 全通过 / <code>1</code> 有失败步骤 / <code>2</code> 框架级错误。
+报告：<code>reports/report-&lt;env&gt;-&lt;suite&gt;.json</code>（含每步骤状态、耗时、账号归属、生效前缀）。</p>
+<h3 id="97-3">9.7 接入真实项目前建议先还的 3 笔技术债</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>问题</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>环境与套件无预检，失败发生在首次构造页面对象时</td>
+<td>在 <code>runner/main.py</code> 装配后加「套件所需账号 ⊆ 当前环境账号表」校验，不过就以退出码 2 结束</td>
+</tr>
+<tr>
+<td>2</td>
+<td>5 个用例全部没有 <code>teardown_case()</code></td>
+<td>真实环境会持续产生脏数据，先约定清理策略再开跑</td>
+</tr>
+<tr>
+<td>3</td>
+<td>报告写 token 前 8 位、会话可落盘</td>
+<td>真实环境设 <code>persist_credentials: false</code>；若报告外发，去掉 <code>preview</code> 字段</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>本文件与 <code>docs/架构总览与差异清单.html</code>、<code>docs/多账号认证方案.md</code> 配套阅读：
+前者是<strong>体检报告</strong>（哪里不一致），本文件是<strong>施工图</strong>（怎么接真实接口），
+后者是<strong>设计说明</strong>（多账号与会话隔离为什么这么设计）。</p>
+</blockquote>
+  <footer>
+    配套阅读：<code>docs/架构总览与差异清单.html</code>（体检报告）·
+    <code>docs/多账号认证方案.md</code>（设计说明）· <code>README.md</code>（使用手册）。
+  </footer>
+  </div>
+</div>
+</body>
+</html>
