@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>架构图与类图 · api-auto-framework</title>
+<style>
+:root{
+  --bg:#FFFFFF; --panel:#F7F7F5; --panel2:#F1EFE8; --line:#E3E1D9;
+  --tx:#22211F; --tx2:#5F5E5A; --tx3:#888780;
+  --blue:#185FA5; --blue-bg:#E6F1FB; --blue-tx:#0C447C;
+  --purple:#534AB7; --purple-bg:#EEEDFE; --purple-tx:#3C3489;
+  --amber:#854F0B; --amber-bg:#FAEEDA;
+  --red:#A32D2D; --red-bg:#FCEBEB;
+  --green:#3B6D11; --green-bg:#EAF3DE;
+  --gray:#5F5E5A; --gray-bg:#F1EFE8;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1A1917; --panel:#242320; --panel2:#2C2C2A; --line:#3A3833;
+    --tx:#EDEBE4; --tx2:#B4B2A9; --tx3:#888780;
+    --blue-bg:#0C447C; --blue-tx:#B5D4F4; --blue:#85B7EB;
+    --purple-bg:#3C3489; --purple-tx:#CECBF6; --purple:#AFA9EC;
+    --amber-bg:#412402; --amber:#FAC775;
+    --red-bg:#501313; --red:#F09595;
+    --green-bg:#173404; --green:#C0DD97;
+    --gray-bg:#2C2C2A; --gray:#B4B2A9;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);
+  font-family:system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.7;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:48px 28px 96px}
+h1{font-size:26px;font-weight:600;margin:0 0 6px;letter-spacing:-.01em}
+.sub{color:var(--tx3);font-size:13px;margin:0 0 8px}
+.meta{color:var(--tx3);font-size:12px;font-family:var(--mono);margin:0 0 32px}
+h2{font-size:19px;font-weight:600;margin:52px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+h3{font-size:15px;font-weight:600;margin:30px 0 10px;color:var(--tx)}
+h4{font-size:13px;font-weight:600;margin:22px 0 8px;color:var(--tx2)}
+p{margin:10px 0;color:var(--tx2)}
+ul,ol{margin:10px 0;padding-left:22px;color:var(--tx2)}
+li{margin:5px 0}
+code{font-family:var(--mono);font-size:12.5px;background:var(--panel2);
+  padding:1px 5px;border-radius:4px;color:var(--tx)}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:14px 16px;overflow-x:auto;margin:12px 0}
+pre code{background:none;padding:0;font-size:12.5px;line-height:1.65}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--tx2);background:var(--panel);font-size:12.5px}
+td code{font-size:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:16px 0}
+.fig{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 20px;margin:18px 0}
+.fig svg{display:block;margin:0 auto}
+.cap{font-size:12px;color:var(--tx3);text-align:center;margin:10px 0 0}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;
+  white-space:nowrap;line-height:1.6}
+.t-blue{background:var(--blue-bg);color:var(--blue-tx)}
+.t-purple{background:var(--purple-bg);color:var(--purple-tx)}
+.t-amber{background:var(--amber-bg);color:var(--amber)}
+.t-red{background:var(--red-bg);color:var(--red)}
+.t-green{background:var(--green-bg);color:var(--green)}
+.t-gray{background:var(--gray-bg);color:var(--gray)}
+.mermaid{text-align:center;margin:6px 0}
+.mermaid svg{max-width:100%;height:auto}
+.note{border-left:3px solid var(--blue);background:var(--blue-bg);border-radius:0 10px 10px 0;
+  padding:12px 16px;margin:14px 0;font-size:13px;color:var(--blue-tx)}
+.warn{border-left:3px solid var(--red);background:var(--red-bg);border-radius:0 10px 10px 0;
+  padding:12px 16px;margin:14px 0;font-size:13px;color:var(--red)}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:6px 16px;font-size:13px}
+.kv dt{color:var(--tx3);font-family:var(--mono);font-size:12px}
+.kv dd{margin:0;color:var(--tx2)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.two{grid-template-columns:1fr}.kv{grid-template-columns:1fr}}
+hr{border:0;border-top:1px solid var(--line);margin:36px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>架构图与类图</h1>
+<p class="sub">Python + requests 接口自动化框架 · 面向页面组织 · 多账号 Cookie 鉴权</p>
+<p class="meta">基线 44 个 .py / 4,812 行 · 生成于 2026-10-14 · 关联文档：<code>架构总览与差异清单.html</code></p>
+
+<div class="note">
+本文所有数字、类名、方法签名均取自当前工作区代码实测，与 <code>521ed1e</code>（401 自愈修复后）一致。
+如与代码不符，以代码为准并回改本文。
+</div>
+
+<h2>1 · 规模基线</h2>
+<table>
+<thead><tr><th>层</th><th>目录</th><th>文件</th><th>行数</th><th>占比</th><th>一句话职责</th></tr></thead>
+<tbody>
+<tr><td><span class="tag t-blue">入口</span></td><td><code>runner/</code></td><td>2</td><td>206</td><td>4.3%</td><td>解析参数、装配依赖、调度用例、出报告</td></tr>
+<tr><td><span class="tag t-blue">用例</span></td><td><code>cases/</code></td><td>7</td><td>746</td><td>15.5%</td><td>一条业务流程 = 一个类，步骤 = <code>test_*</code> 方法</td></tr>
+<tr><td><span class="tag t-blue">页面</span></td><td><code>apis/</code></td><td>16</td><td>561</td><td>11.7%</td><td>一页面类一文件，一接口一方法，方法体零鉴权代码</td></tr>
+<tr><td><span class="tag t-purple">内核</span></td><td><code>core/</code></td><td>13</td><td>1228</td><td>25.5%</td><td>唯一请求出口、账号隔离、凭证生命周期、鉴权策略族</td></tr>
+<tr><td><span class="tag t-gray">配置</span></td><td><code>config/</code></td><td>2</td><td>178</td><td>3.7%</td><td>读环境 yaml / 账号表 / 密钥文件，解析 <code>${VAR}</code></td></tr>
+<tr><td><span class="tag t-gray">工具</span></td><td><code>tools/</code></td><td>4</td><td>1893</td><td>39.3%</td><td>单接口联调、单用例压测、两个 mock 服务</td></tr>
+</tbody>
+</table>
+
+<h2>2 · 分层架构图</h2>
+<p>五层严格单向：<strong>上层可以依赖下层，下层绝不反向依赖上层</strong>。右侧四个目录是横切件，不参与分层依赖。
+箭头方向 = 依赖方向 = 数据流方向。</p>
+
+<div class="fig">
+<svg viewBox="0 0 680 474" width="100%" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>框架分层架构与依赖方向</title>
+<desc>runner、cases、apis、core、config 五层单向依赖，右侧为 suites、tools、docs、runtime 横切件</desc>
+<defs>
+<marker id="dep" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+<rect x="40" y="40" width="430" height="58" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="58" y="61" font-family="system-ui,sans-serif" font-size="14" font-weight="500" fill="#0C447C" dominant-baseline="central">runner · 入口层</text>
+<text x="58" y="79" font-family="system-ui,sans-serif" font-size="12" fill="#185FA5" dominant-baseline="central">装配 Context → 按套件顺序调度用例 → 写报告</text>
+<text x="452" y="61" text-anchor="end" font-family="system-ui,sans-serif" font-size="12" fill="#185FA5" dominant-baseline="central">206 行 / 2 文件</text>
+<rect x="40" y="122" width="430" height="58" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="58" y="143" font-family="system-ui,sans-serif" font-size="14" font-weight="500" fill="#0C447C" dominant-baseline="central">cases · 用例层</text>
+<text x="58" y="161" font-family="system-ui,sans-serif" font-size="12" fill="#185FA5" dominant-baseline="central">BaseCase + 5 个用例类；步骤按方法名字典序执行</text>
+<text x="452" y="143" text-anchor="end" font-family="system-ui,sans-serif" font-size="12" fill="#185FA5" dominant-baseline="central">746 行 / 7 文件</text>
+<rect x="40" y="204" width="430" height="58" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="58" y="225" font-family="system-ui,sans-serif" font-size="14" font-weight="500" fill="#0C447C" dominant-baseline="central">apis · 页面层</text>
+<text x="58" y="243" font-family="system-ui,sans-serif" font-size="12" fill="#185FA5" dominant-baseline="central">BaseApi + 8 页面类 + 6 业务域 API</text>
+<text x="452" y="225" text-anchor="end" font-family="system-ui,sans-serif" font-size="12" fill="#185FA5" dominant-baseline="central">561 行 / 16 文件</text>
+<rect x="40" y="286" width="430" height="88" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="58" y="311" font-family="system-ui,sans-serif" font-size="14" font-weight="500" fill="#3C3489" dominant-baseline="central">core · 内核层</text>
+<text x="58" y="331" font-family="system-ui,sans-serif" font-size="12" fill="#534AB7" dominant-baseline="central">Context · SessionFactory · HttpClient</text>
+<text x="58" y="351" font-family="system-ui,sans-serif" font-size="12" fill="#534AB7" dominant-baseline="central">TokenStore · AuthStrategy ×7 · ApiResponse · Token</text>
+<text x="452" y="311" text-anchor="end" font-family="system-ui,sans-serif" font-size="12" fill="#534AB7" dominant-baseline="central">1228 行 / 13 文件</text>
+<rect x="40" y="398" width="430" height="56" rx="10" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text x="58" y="419" font-family="system-ui,sans-serif" font-size="14" font-weight="500" fill="#444441" dominant-baseline="central">config · 配置层</text>
+<text x="58" y="437" font-family="system-ui,sans-serif" font-size="12" fill="#5F5E5A" dominant-baseline="central">读 env/*.yaml 与账号表，解析 ${VAR} 引用</text>
+<text x="452" y="419" text-anchor="end" font-family="system-ui,sans-serif" font-size="12" fill="#5F5E5A" dominant-baseline="central">178 行 / 2 文件</text>
+<line x1="255" y1="98" x2="255" y2="119" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#dep)"/>
+<line x1="255" y1="180" x2="255" y2="201" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#dep)"/>
+<line x1="255" y1="262" x2="255" y2="283" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#dep)"/>
+<line x1="255" y1="374" x2="255" y2="395" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#dep)"/>
+<rect x="490" y="40" width="150" height="414" rx="14" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text x="565" y="62" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="500" fill="#444441" dominant-baseline="central">横切件</text>
+<rect x="502" y="78" width="126" height="72" rx="8" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.5"/>
+<text x="565" y="106" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#444441" dominant-baseline="central">suites/</text>
+<text x="565" y="126" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#5F5E5A" dominant-baseline="central">4 个套件声明</text>
+<rect x="502" y="168" width="126" height="72" rx="8" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.5"/>
+<text x="565" y="196" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#444441" dominant-baseline="central">tools/</text>
+<text x="565" y="216" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#5F5E5A" dominant-baseline="central">联调 · 压测 · mock</text>
+<rect x="502" y="258" width="126" height="72" rx="8" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.5"/>
+<text x="565" y="286" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#444441" dominant-baseline="central">docs/</text>
+<text x="565" y="306" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#5F5E5A" dominant-baseline="central">7 份手册与方案</text>
+<rect x="502" y="348" width="126" height="72" rx="8" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.5"/>
+<text x="565" y="376" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#444441" dominant-baseline="central">runtime/ · reports/</text>
+<text x="565" y="396" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#5F5E5A" dominant-baseline="central">凭证缓存 · 测试报告</text>
+</svg>
+<p class="cap">图 1 · 分层结构与单向依赖（箭头 = 依赖方向）</p>
+</div>
+
+<h3>2.1 各层职责与禁止事项</h3>
+<table>
+<thead><tr><th>层</th><th>职责</th><th>只允许 import</th><th>明确禁止</th></tr></thead>
+<tbody>
+<tr>
+<td><span class="tag t-blue">runner</span></td>
+<td>命令行解析、依赖装配（Settings → TokenStore → SessionFactory → Context）、按套件顺序跑用例、写 JSON 报告、定退出码</td>
+<td>全部下层 + <code>yaml</code></td>
+<td>不写业务断言；不直接发 HTTP</td>
+</tr>
+<tr>
+<td><span class="tag t-blue">cases</span></td>
+<td>组织业务流程步骤、记录每步成败、跨步骤传递变量</td>
+<td><code>apis</code> / <code>core</code></td>
+<td>不拼 URL；不碰凭证；不 import <code>requests</code></td>
+</tr>
+<tr>
+<td><span class="tag t-blue">apis</span></td>
+<td>声明式描述「这个页面用哪个账号、哪个前缀、有哪些接口」</td>
+<td><code>core.context</code>（仅此一个）</td>
+<td><span class="tag t-red">方法体禁止出现任何凭证代码</span>；不写断言；不处理重试</td>
+</tr>
+<tr>
+<td><span class="tag t-purple">core</span></td>
+<td>请求出口、账号隔离、凭证生命周期、鉴权策略、响应封装、断言库、异常体系、日志</td>
+<td>标准库 + <code>requests</code> + 自身</td>
+<td>不 import <code>apis</code>/<code>cases</code>/<code>runner</code>（否则形成环）</td>
+</tr>
+<tr>
+<td><span class="tag t-gray">config</span></td>
+<td>把 yaml / 环境变量 / 密钥文件收敛成一个不可变的 <code>Settings</code> 与账号字典</td>
+<td>标准库 + <code>yaml</code> + <code>core.exceptions</code></td>
+<td>不 import <code>core</code> 的其余部分；不含业务逻辑</td>
+</tr>
+</tbody>
+</table>
+
+<div class="note">
+<strong>三条结构性设计，是这套框架最值钱的地方：</strong>
+<ol style="margin:6px 0 0">
+<li><strong>请求出口唯一</strong> —— 所有 HTTP 都走 <code>HttpClient.request()</code>。页面类不碰鉴权、不碰 base_url、不碰重试。换 <code>httpx</code>/<code>aiohttp</code> 只需改 <code>core/http_client.py</code> 一个文件。</li>
+<li><strong>隔离靠物理而非约定</strong> —— 一个账号 = 一个 <code>HttpClient</code> = 一个 <code>requests.Session</code>，CookieJar 挂在 Session 上且实例不共享，所以「Cookie 不可能串」是结构保证，不是纪律要求。</li>
+<li><strong>鉴权是策略族不是 if-else</strong> —— 7 种 <code>auth.type</code> 由 <code>@register</code> 注册进 registry，接真实接口时新增鉴权方式不用改任何既有代码。</li>
+</ol>
+</div>
+
+<h2>3 · 类图</h2>
+
+<h3>3.1 内核与鉴权类</h3>
+<p>核心是「一条工厂链」：<code>Context</code> 持有 <code>SessionFactory</code>，<code>SessionFactory</code> 组合出每个账号专属的 <code>HttpClient</code>，
+<code>HttpClient</code> 再聚合一个 <code>AuthStrategy</code>。注意 <code>Context</code> 只是<strong>传参总线</strong>——
+它不保存任何账号状态，账号凭证全部托管在 <code>SessionFactory</code> 与 <code>TokenStore</code>，所以切账号不会产生全局状态污染。</p>
+
+<div class="fig">
+<div class="mermaid">
+classDiagram
+    direction TB
+    class Context {
+        +SessionFactory factory
+        +str env
+        -dict _vars
+        +client(account) HttpClient
+        +login(account, force) Token
+        +set(key, value)
+        +interpolate(value) Any
+    }
+    class SessionFactory {
+        +Settings settings
+        +dict accounts
+        +TokenStore store
+        -dict _clients
+        -dict _strategies
+        +client(account) HttpClient
+        +login(account, force) Token
+        -_do_login(account, spec) Token
+        -_renew(account)
+    }
+    class HttpClient {
+        +str base_url
+        +str account
+        +Session session
+        -AuthStrategy _strategy
+        -bool auth_retried
+        +request(method, path, auth) ApiResponse
+        +bind_auth(strategy, provider)
+        +cookies() dict
+    }
+    class AuthStrategy {
+        <<abstract>>
+        +str type
+        +bool uses_session
+        +str token_path
+        +apply(headers, params, cookies)
+        +requires_credential() bool
+        +snapshot(session) dict
+    }
+    class CookieAuth {
+        +str type
+        +int assume_ttl
+    }
+    class BearerAuth {
+        +str type
+    }
+    class HeaderAuth {
+        +str type
+    }
+    class BasicAuth {
+        +str type
+    }
+    class TokenStore {
+        +Path cache_file
+        +bool persist
+        -dict _memory
+        +get(env, account) Token
+        +set(token) Token
+        +invalidate(env, account)
+    }
+    class Token {
+        +str account
+        +str value
+        +dict cookies
+        +float expires_at
+        +is_valid(leeway) bool
+    }
+    class ApiResponse {
+        +str method
+        +int status_code
+        +float elapsed_ms
+        +str account
+        +json() Any
+        +get(path) Any
+    }
+    class Settings {
+        +str env
+        +str base_url
+        +str api_prefix
+        +int retries
+    }
+    class Session {
+        <<requests.Session>>
+    }
+    Context o-- SessionFactory : 持有
+    SessionFactory *-- HttpClient : _clients 组合
+    SessionFactory *-- TokenStore : store 组合
+    SessionFactory ..> AuthStrategy : build_strategy 创建
+    SessionFactory ..> Settings : 读取配置
+    HttpClient *-- Session : 独占 CookieJar
+    HttpClient o-- AuthStrategy : bind_auth 注入
+    HttpClient ..> ApiResponse : 每次请求返回
+    TokenStore *-- Token : 按 环境+账号 索引
+    AuthStrategy <|-- CookieAuth
+    AuthStrategy <|-- BearerAuth
+    AuthStrategy <|-- HeaderAuth
+    AuthStrategy <|-- BasicAuth
+</div>
+<p class="cap">图 2 · 内核与鉴权类图（另 3 个策略：QueryAuth / SignatureAuth / NoAuth 同构，省略）</p>
+</div>
+
+<h3>3.2 用例层与页面层类</h3>
+<p><code>BaseCase</code> 用 <code>_apis</code> 字典按 <code>(页面类, 账号)</code> 缓存页面对象，所以一个用例里反复取同一页面不会重复构造；
+<code>BaseApi</code> 在 <code>__init__</code> 里就通过 <code>ctx.client(principal)</code> 把已鉴权的客户端挂好了——
+这是「页面类里永远看不到凭证代码」的实现原理。</p>
+
+<div class="fig">
+<div class="mermaid">
+classDiagram
+    direction TB
+    class BaseCase {
+        +Context ctx
+        +CaseResult result
+        -dict _apis
+        +api(cls, account) BaseApi
+        +check(step, response) bool
+        +mark(step, ok) bool
+        +setup_case()
+        +teardown_case()
+        +run() CaseResult
+    }
+    class CaseResult {
+        +str name
+        +list steps
+        +str error
+        +float duration_ms
+        +ok bool
+        +passed int
+    }
+    class StepResult {
+        +str case
+        +str step
+        +bool ok
+        +str detail
+        +float duration_ms
+    }
+    class BaseApi {
+        +str account
+        +str role
+        +str prefix
+        +Context ctx
+        +HttpClient client
+        +as_account(account) BaseApi
+        +_url(path) str
+        +delete(path) ApiResponse
+    }
+    class ApplyPageApi {
+        +str account
+    }
+    class ExpertReviewPageApi {
+        +str account
+    }
+    class IpqReviewPageApi {
+        +str account
+    }
+    class InvestigatingPageApi {
+        +str account
+    }
+    class OrderFlowCase {
+        +test_01_browse_products()
+        +test_02_place_order_by_reference()
+        +test_03_read_order_back()
+    }
+    class MultiAccountFlowCase {
+        +test_09_stale_csrf_is_rejected()
+        +test_10_session_expiry_self_heals()
+    }
+    BaseCase *-- CaseResult : 组合
+    CaseResult *-- StepResult : steps 组合
+    BaseCase o-- BaseApi : _apis 缓存
+    BaseCase ..> Context : 依赖
+    BaseApi ..> Context : ctx.client()
+    BaseApi o-- HttpClient : client
+    BaseCase <|-- OrderFlowCase
+    BaseCase <|-- MultiAccountFlowCase
+    BaseApi <|-- ApplyPageApi
+    BaseApi <|-- ExpertReviewPageApi
+    BaseApi <|-- IpqReviewPageApi
+    BaseApi <|-- InvestigatingPageApi
+</div>
+<p class="cap">图 3 · 用例层与页面层类图（另 4 个页面类、另 3 个用例类同构，省略）</p>
+</div>
+
+<h2>4 · 完整类目</h2>
+
+<h3>4.1 core 内核层（13 文件 / 1228 行）</h3>
+<table>
+<thead><tr><th>类</th><th>文件</th><th>类型</th><th>关键成员</th></tr></thead>
+<tbody>
+<tr><td><code>Context</code></td><td>core/context.py</td><td>普通类</td><td>factory · env · _vars；client() login() set() interpolate()</td></tr>
+<tr><td><code>SessionFactory</code></td><td>core/session_factory.py</td><td>普通类</td><td>settings · accounts · store · _clients · _strategies；client() login() _do_login() _renew()</td></tr>
+<tr><td><code>HttpClient</code></td><td>core/http_client.py</td><td>普通类</td><td>base_url · account · session · _strategy · _token_provider · _on_unauthorized；request() bind_auth() get/post/put/patch/delete</td></tr>
+<tr><td><code>AuthStrategy</code></td><td>core/auth/base.py</td><td><span class="tag t-purple">ABC 抽象基类</span></td><td>type · uses_session · spec · token_path · expires_path；apply()※ prepare() snapshot() restore() clear_session() extract() extract_expires()</td></tr>
+<tr><td><code>NoAuth</code> / <code>CookieAuth</code> / <code>BearerAuth</code> / <code>HeaderAuth</code> / <code>QueryAuth</code> / <code>BasicAuth</code> / <code>SignatureAuth</code></td><td>core/auth/strategies.py</td><td><span class="tag t-green">7 个具体策略</span></td><td>各带 <code>type</code> 字面量；CookieAuth 额外有 <code>uses_session=True</code> 与 CSRF 的 <code>prepare()</code> 覆写</td></tr>
+<tr><td><code>TokenStore</code></td><td>core/token_store.py</td><td>普通类</td><td>cache_file · persist · _memory；get/peek/set/invalidate/clear/all/_persist</td></tr>
+<tr><td><code>Token</code></td><td>core/token_store.py</td><td><span class="tag t-blue">dataclass</span></td><td>account · env · value · cookies · expires_at · refresh_token · obtained_at；is_valid() remaining() kind()</td></tr>
+<tr><td><code>ApiResponse</code></td><td>core/response.py</td><td><span class="tag t-blue">dataclass</span></td><td>method · url · status_code · headers · text · elapsed_ms · account；ok() json() get() require() summary()</td></tr>
+<tr><td><code>FrameworkError</code> 及其 5 个子类</td><td>core/exceptions.py</td><td><span class="tag t-red">异常族</span></td><td>ConfigError → RoleNotDefined；AuthError · ApiError · PathNotFound</td></tr>
+</tbody>
+</table>
+
+<h3>4.2 apis 页面层（16 文件 / 561 行，15 个类）</h3>
+<table>
+<thead><tr><th>类</th><th>账号声明</th><th>prefix</th><th>接口方法数</th><th>所属账号域</th></tr></thead>
+<tbody>
+<tr><td><code>BaseApi</code></td><td colspan="3"><code>account=None</code> · <code>role="guest"</code> · <code>prefix=None</code>（基类）</td><td>—</td></tr>
+<tr><td><code>ApplyPageApi</code></td><td>test1</td><td>未声明</td><td>2</td><td rowspan="8"><span class="tag t-purple">session 域</span></td></tr>
+<tr><td><code>ExpertReviewPageApi</code></td><td>test34</td><td>未声明</td><td>1</td></tr>
+<tr><td><code>FaeSummaryPageApi</code></td><td>test1</td><td>未声明</td><td>1</td></tr>
+<tr><td><code>FaeLeadReviewPageApi</code></td><td>test34</td><td>未声明</td><td>1</td></tr>
+<tr><td><code>IpqReviewPageApi</code></td><td>test38</td><td>未声明</td><td>1</td></tr>
+<tr><td><code>InvestigatingPageApi</code></td><td>test666</td><td>未声明</td><td>1</td></tr>
+<tr><td><code>InvestigationSummaryPageApi</code></td><td>test666</td><td>未声明</td><td>1</td></tr>
+<tr><td><code>CompletedPageApi</code></td><td>test1</td><td>未声明</td><td>2</td></tr>
+<tr><td><code>FlowApi</code></td><td>test1</td><td><code>""</code></td><td>7</td><td rowspan="3"><span class="tag t-purple">session 域</span></td></tr>
+<tr><td><code>ShopApi</code></td><td>buyer_a</td><td><code>""</code></td><td>7</td></tr>
+<tr><td><code>PartnerApi</code></td><td>partner_bot</td><td><code>""</code></td><td>1</td></tr>
+<tr><td><code>OrderApi</code></td><td><code>role="merchant"</code> ⚠</td><td><code>"/orders"</code></td><td>5</td><td rowspan="3"><span class="tag t-blue">dev 域</span></td></tr>
+<tr><td><code>ProductApi</code></td><td><code>role="guest"</code> ⚠</td><td><code>"/products"</code></td><td>2</td></tr>
+<tr><td><code>UserApi</code></td><td><code>role="admin"</code> ⚠</td><td><code>"/users"</code></td><td>5</td></tr>
+</tbody>
+</table>
+
+<div class="warn">
+<strong>⚠ 双口径并存（真实存在的写法不一致）：</strong>
+session 域的 11 个类用新写法 <code>account = "test1"</code>，dev 域的 3 个类仍用旧写法 <code>role = "merchant"</code>。
+两者在 <code>BaseApi.__init__</code> 里被 <code>chosen = account or role</code> 统一，所以能跑通；
+但 <code>BaseApi.role</code> 的类默认值是 <code>"guest"</code> —— <strong>任何既没写 account 也没写 role 的子类，会静默地以 guest 身份发请求</strong>，
+表现为莫名其妙的 403 而不是报错。新增页面类时这是最容易踩的坑。
+</div>
+
+<h3>4.3 cases 用例层（7 文件 / 746 行）</h3>
+<table>
+<thead><tr><th>类</th><th>文件</th><th>步骤数</th><th>覆写 teardown_case()</th><th>适用环境</th></tr></thead>
+<tbody>
+<tr><td><code>BaseCase</code></td><td>cases/base_case.py</td><td>—</td><td>空实现</td><td>—</td></tr>
+<tr><td><code>AuthCase</code></td><td>cases/auth_case.py</td><td>6</td><td><span class="tag t-red">否</span></td><td>dev</td></tr>
+<tr><td><code>OrderFlowCase</code></td><td>cases/order_flow_case.py</td><td>5</td><td><span class="tag t-red">否</span></td><td>dev</td></tr>
+<tr><td><code>MultiAccountFlowCase</code></td><td>cases/multi_account_flow_case.py</td><td>11</td><td><span class="tag t-red">否</span></td><td>session（也含 dev 风格断言）</td></tr>
+<tr><td><code>AccountRolesCase</code></td><td>cases/account_roles_case.py</td><td>8</td><td><span class="tag t-red">否</span></td><td>session</td></tr>
+<tr><td><code>AllPagesFlowCase</code></td><td>cases/all_pages_case.py</td><td>2</td><td><span class="tag t-red">否</span></td><td>session</td></tr>
+</tbody>
+</table>
+<p><strong>5 个用例类无一覆写 <code>teardown_case()</code></strong> —— 在 mock 上无影响，接真实环境后会持续产脏数据。</p>
+
+<h3>4.4 runner 与 tools</h3>
+<table>
+<thead><tr><th>名称</th><th>文件</th><th>职责</th></tr></thead>
+<tbody>
+<tr><td><code>main()</code> 及 6 个辅助函数</td><td>runner/main.py</td><td>parse_args / load_suite / resolve_cases / build_report / print_summary / print_accounts</td></tr>
+<tr><td><code>AnonymousContext</code></td><td>tools/hit.py</td><td>为 <code>--no-auth</code> 提供真正无凭证的上下文（不复用任何账号的 CookieJar）</td></tr>
+<tr><td><code>Handler</code></td><td>tools/mock_server.py</td><td>dev mock，<code>BaseHTTPRequestHandler</code> 子类，内存态，支持 GET/POST/PUT</td></tr>
+<tr><td><code>Handler</code></td><td>tools/mock_server_session.py</td><td>session mock，同上 + 8 环节线性状态机（越阶返回 409）</td></tr>
+<tr><td>6 个函数</td><td>tools/repeat_case.py</td><td>单用例重复执行 N 次 + 成败统计 + 耗时分布</td></tr>
+</tbody>
+</table>
+
+<h2>5 · 类关系矩阵</h2>
+<table>
+<thead><tr><th>关系</th><th>语义</th><th>本框架中的实例</th><th>为什么这样设计</th></tr></thead>
+<tbody>
+<tr>
+<td><span class="tag t-green">继承</span><br><code>&lt;|--</code></td>
+<td>is-a</td>
+<td>
+<code>AuthStrategy</code> ← 7 个策略<br>
+<code>BaseApi</code> ← 14 个页面/业务类<br>
+<code>BaseCase</code> ← 5 个用例类<br>
+<code>BaseHTTPRequestHandler</code> ← 2 个 mock Handler
+</td>
+<td>新增页面/用例/鉴权方式都是「加一个子类」，父类零改动</td>
+</tr>
+<tr>
+<td><span class="tag t-purple">组合</span><br><code>*--</code></td>
+<td>强拥有，生命周期同步</td>
+<td>
+<code>SessionFactory</code> ◆ <code>HttpClient</code>（<code>_clients</code>）<br>
+<code>SessionFactory</code> ◆ <code>TokenStore</code><br>
+<code>HttpClient</code> ◆ <code>requests.Session</code><br>
+<code>TokenStore</code> ◆ <code>Token</code><br>
+<code>BaseCase</code> ◆ <code>CaseResult</code> ◆ <code>StepResult</code>
+</td>
+<td>工厂销毁则客户端/会话一起消失。账号隔离的物理基础就在 <code>HttpClient ◆ Session</code> 这一条</td>
+</tr>
+<tr>
+<td><span class="tag t-blue">聚合</span><br><code>o--</code></td>
+<td>弱拥有，可外部替换</td>
+<td>
+<code>Context</code> ◇ <code>SessionFactory</code><br>
+<code>HttpClient</code> ◇ <code>AuthStrategy</code>（<code>bind_auth</code> 注入）<br>
+<code>BaseCase</code> ◇ <code>BaseApi</code>（<code>_apis</code> 缓存）<br>
+<code>BaseApi</code> ◇ <code>HttpClient</code>
+</td>
+<td>策略是「装配时注入」而非「内部 new」，所以同一个 <code>HttpClient</code> 可以换策略；页面对象按需构造、用完即弃</td>
+</tr>
+<tr>
+<td><span class="tag t-amber">依赖</span><br><code>..&gt;</code></td>
+<td>只用不拥有</td>
+<td>
+<code>SessionFactory</code> ⇢ <code>AuthStrategy</code>（<code>build_strategy()</code> 造）<br>
+<code>SessionFactory</code> ⇢ <code>Settings</code><br>
+<code>HttpClient</code> ⇢ <code>ApiResponse</code>（返回值）<br>
+<code>BaseCase</code> / <code>BaseApi</code> ⇢ <code>Context</code>
+</td>
+<td>两个 mock 的 handler 与 <code>hit.py</code> 都复用了这条链路，所以「跑一次」和「跑套件」结果同源</td>
+</tr>
+</tbody>
+</table>
+
+<h2>6 · 一次接口调用的完整执行时序</h2>
+<pre><code>runner/main.py :: main()
+ ├─ load_settings(env)                  → Settings（含 base_url / api_prefix / retries）
+ ├─ load_accounts(accounts_file)        → dict（账号 → {auth, login, ...}）
+ ├─ TokenStore(credential_cache)        → 进程内凭证仓库（+ 可选落盘）
+ ├─ SessionFactory(settings, accounts, store)
+ ├─ factory.login(预登录账号)            ← 可选，--fresh-token 会先 store.clear()
+ │   └─ client(account)
+ │       ├─ build_strategy(spec["auth"])        ← registry 里按 auth.type 取类
+ │       └─ HttpClient(...).bind_auth(策略, token_provider, on_unauthorized)
+ ├─ Context(factory, env)               → 传参总线，不持账号状态
+ ├─ load_suite(name) / resolve_cases()  → suites/&lt;name&gt;.yaml
+ └─ for case_cls in pairs: case_cls(ctx).run()
+     ├─ setup_case()
+     ├─ for name in step_names():      ← 方法名字典序，不是代码顺序
+     │   └─ getattr(self, name)()
+     │       ├─ self.api(XxxPageApi)   → BaseApi.__init__
+     │       │   ├─ principal = account or role
+     │       │   ├─ prefix = ctx.api_prefix（类未声明时）
+     │       │   └─ client = ctx.client(principal)   ← 已鉴权，页面类看不到凭证
+     │       ├─ api.some_method(...)
+     │       │   └─ BaseApi._url(path) → 前缀拼接
+     │       │       └─ HttpClient.request()
+     │       │           ├─ _join(path)               base_url + path
+     │       │           ├─ token_provider()          懒登录，命中缓存≈零成本
+     │       │           ├─ strategy.prepare()        补 CSRF 头（CookieAuth）
+     │       │           ├─ strategy.apply()          注入 headers/params/cookies
+     │       │           ├─ session.request(...)      ← 唯一真正发请求的地方
+     │       │           └─ 异常分流：
+     │       │               · 网络异常 / 5xx → attempt 重试（retries + backoff）
+     │       │               · 401            → auth_retried 标志 → _renew() → 原样重发 1 次
+     │       │               · 403            → 不重登，原样返回
+     │       └─ self.check(step, resp, expect_status, expect)
+     │           └─ CaseResult.steps.append(StepResult)   ← 单步失败不中断
+     ├─ teardown_case()                ← 5 个用例全部未覆写（技术债）
+     └─ return CaseResult
+ ├─ build_report(...)                   → reports/report-&lt;env&gt;-&lt;suite&gt;.json
+ └─ exit 0 全通过 / 1 有失败 / 2 框架级错误</code></pre>
+
+<h2>7 · 可扩展点</h2>
+<p>按「接入成本从低到高」排序。前四项都是<strong>纯增量</strong>，不需要改动任何既有文件。</p>
+
+<table>
+<thead><tr><th>#</th><th>要做什么</th><th>改哪里</th><th>具体做法</th><th>成本</th></tr></thead>
+<tbody>
+<tr>
+<td>1</td><td><strong>新增页面 / 接口</strong></td>
+<td><code>apis/&lt;名称&gt;_page.py</code><br><code>apis/__init__.py</code></td>
+<td>继承 <code>BaseApi</code>，写 <code>account = "xxx"</code>，每个接口一个方法（方法体只写业务语义）；然后在 <code>__init__.py</code> 导出</td>
+<td><span class="tag t-green">零改动接入</span></td>
+</tr>
+<tr>
+<td>2</td><td><strong>新增鉴权方案</strong></td>
+<td><code>core/auth/strategies.py</code></td>
+<td>继承 <code>AuthStrategy</code>，设 <code>type = "xxx"</code>，实现 <code>apply()</code>，加 <code>@register</code> 装饰器；账号表里写 <code>auth: {type: xxx}</code> 即可用</td>
+<td><span class="tag t-green">零改动接入</span></td>
+</tr>
+<tr>
+<td>3</td><td><strong>新增用例</strong></td>
+<td><code>cases/&lt;名称&gt;_case.py</code><br><code>suites/*.yaml</code></td>
+<td>继承 <code>BaseCase</code>，方法名 <code>test_01_</code>… 控制顺序；在套件 yaml 的 <code>cases:</code> 列表里登记</td>
+<td><span class="tag t-green">零改动接入</span></td>
+</tr>
+<tr>
+<td>4</td><td><strong>新增套件编排</strong></td>
+<td><code>suites/&lt;名称&gt;.yaml</code></td>
+<td>声明 <code>name</code> 与 <code>cases</code> 列表，<code>--suite</code> 直接可用</td>
+<td><span class="tag t-green">零改动接入</span></td>
+</tr>
+<tr>
+<td>5</td><td><strong>接入真实环境</strong></td>
+<td><code>config/env/&lt;env&gt;.yaml</code><br><code>config/accounts.&lt;env&gt;.yaml</code><br><code>config/secrets.env</code></td>
+<td>复制 env yaml 改 <code>base_url</code>/<code>api_prefix</code>；账号表按真实账号写；口令只进 <code>secrets.env</code> 并保持 gitignore</td>
+<td><span class="tag t-amber">中</span>（注意账号域与 prefix 三态）</td>
+</tr>
+<tr>
+<td>6</td><td><strong>换 HTTP 库</strong></td>
+<td><code>core/http_client.py</code></td>
+<td>只改这一个文件；<code>ApiResponse</code> 已是隔离层，页面类与用例零改动</td>
+<td><span class="tag t-amber">中</span></td>
+</tr>
+<tr>
+<td>7</td><td><strong>新增断言</strong></td>
+<td><code>core/assertions.py</code></td>
+<td>写一个返回 <code>_check(response)</code> 闭包的工厂函数，失败 <code>raise AssertionError</code>；配 <code>all_of()</code> 组合</td>
+<td><span class="tag t-green">零改动接入</span></td>
+</tr>
+<tr>
+<td>8</td><td><strong>新增联调工具</strong></td>
+<td><code>tools/</code></td>
+<td>复制 <code>hit.py</code> 的 <code>build_context()</code> 装配链路，保证与套件同源</td>
+<td><span class="tag t-green">零改动接入</span></td>
+</tr>
+<tr>
+<td>9</td><td><strong>并发执行</strong></td>
+<td><code>runner/main.py</code></td>
+<td>⚠ 前置条件：先解决 <code>persist_credentials</code>（多进程并发写同一个 <code>runtime/credentials.&lt;env&gt;.json</code>）与 <code>requests.Session</code> 连接池（默认 10）限制</td>
+<td><span class="tag t-red">高</span></td>
+</tr>
+</tbody>
+</table>
+
+<h2>8 · 需要重点关注的代码位置</h2>
+<p>按「接真实接口前必须先处理」的优先级排列。前 3 项是硬阻塞。</p>
+
+<table>
+<thead><tr><th>优先级</th><th>位置</th><th>问题</th><th>后果</th><th>建议</th></tr></thead>
+<tbody>
+<tr>
+<td><span class="tag t-red">P0</span></td>
+<td><code>apis/*.py</code>（14 个类）<br><code>tools/mock_server*.py</code></td>
+<td><strong>全框架无删除能力</strong>：<code>BaseApi.delete()</code> 只是转发管道，14 个页面类没有一个暴露删除方法；两个 mock 也只注册了 GET/POST/PUT，没有 DELETE 路由</td>
+<td>造数、万次重复执行产生的数据<strong>无法通过接口回收</strong>，真实环境会留下不可逆脏数据</td>
+<td>接真实环境前先补齐各页面类的删除方法，并确认服务端清理路径</td>
+</tr>
+<tr>
+<td><span class="tag t-red">P0</span></td>
+<td><code>cases/*.py</code>（5 个用例）</td>
+<td>全部未覆写 <code>teardown_case()</code></td>
+<td>同上，且每个用例都会再叠加一层脏数据</td>
+<td>逐用例补清理逻辑，或统一加「按标题前缀批量清理」的收尾步骤</td>
+</tr>
+<tr>
+<td><span class="tag t-red">P0</span></td>
+<td><code>runner/main.py</code>（装配段）</td>
+<td>没有「环境 × 套件」预检：环境与套件/页面类是隐式耦合的</td>
+<td>拿错环境表时，错误发生在<strong>首次构造页面对象的那一刻</strong>（<code>RoleNotDefined</code>），而不是启动时；表现为跑到一半才炸</td>
+<td>启动时先校验套件里所有用例引用的页面类，其账号在当前环境账号表中都存在</td>
+</tr>
+<tr>
+<td><span class="tag t-amber">P1</span></td>
+<td><code>core/auth/strategies.py</code><br>CookieAuth.<code>assume_ttl = 1800</code></td>
+<td>「凭证是否过期」用的是<strong>本地假定值</strong>，不是服务端真实过期时间；注释自陈「真实过期靠 401 兜底」</td>
+<td>服务端会话 &lt; 30 min → 必然先吃一次 401 才兜底；&gt; 30 min → 到点会<strong>多余重登一次</strong>，正好违背「没过期就继续复用」的要求</td>
+<td>让登录响应返回真实 <code>expires_in</code>，走 <code>extract_expires()</code> 而不是 <code>assume_ttl</code></td>
+</tr>
+<tr>
+<td><span class="tag t-amber">P1</span></td>
+<td><code>config/settings.py:131</code></td>
+<td>账号表顶层键名硬编码：<code>raw.get("accounts") or raw.get("roles") or {}</code>，且文件名回落 <code>roles.yaml</code></td>
+<td>「账号」概念已全面取代「角色」，但键名/文件名的旧名兼容长期并存，新人容易改错地方</td>
+<td>收敛为单一键名与单一文件名，去掉 <code>roles</code> 别名</td>
+</tr>
+<tr>
+<td><span class="tag t-amber">P1</span></td>
+<td><code>core/exceptions.py</code><br><code>RoleNotDefined</code></td>
+<td>类名仍是旧概念「角色」，但报错文案写的是「未定义的账号」</td>
+<td>排查时按类名去搜「角色」，会找错方向</td>
+<td>改名 <code>AccountNotDefined</code>，保留旧名做别名过渡</td>
+</tr>
+<tr>
+<td><span class="tag t-amber">P1</span></td>
+<td><code>apis/base_api.py</code><br><code>role: str = "guest"</code></td>
+<td>基类给了 <code>role</code> 一个非 None 的默认值</td>
+<td>子类既不写 <code>account</code> 也不写 <code>role</code> 时，会<strong>静默以 guest 身份发请求</strong>，得到 403 而非报错——比直接崩更难查</td>
+<td>把默认值改成 <code>None</code>，未声明时在 <code>__init__</code> 抛 <code>ConfigError</code></td>
+</tr>
+<tr>
+<td><span class="tag t-amber">P1</span></td>
+<td><code>Token.role</code> · <code>ApiResponse.role</code> · <code>HttpClient.role</code> · <code>BaseApi.as_role()</code></td>
+<td>4 处 `role` 兼容别名指向的其实都是账号</td>
+<td>双口径长期存在，读代码时容易误判「角色」与「账号」是两套东西</td>
+<td>整理一遍调用点后统一移除别名</td>
+</tr>
+<tr>
+<td><span class="tag t-blue">P2</span></td>
+<td><code>config/settings.py</code><br><code>load_secrets()</code></td>
+<td>用 <code>os.environ.setdefault</code>，<strong>真实环境变量优先</strong>，会静默盖掉 <code>secrets.env</code> 里的值</td>
+<td>「明明改了 secrets.env 却不生效」的经典坑</td>
+<td>启动时打印实际生效的口令来源（文件名 vs 环境变量）</td>
+</tr>
+<tr>
+<td><span class="tag t-blue">P2</span></td>
+<td><code>tools/mock_server_session.py</code></td>
+<td>注册表路径与键名硬编码，未走环境配置</td>
+<td>更换账号表/环境时需要改代码</td>
+<td>迁到 <code>config/</code> 下统一管理</td>
+</tr>
+<tr>
+<td><span class="tag t-blue">P2</span></td>
+<td><code>core/token_store.py</code><br><code>persist=True</code> 默认值</td>
+<td>凭证默认落盘，且报告里会写 token 前 8 位</td>
+<td>多进程并发会同时写 <code>runtime/credentials.&lt;env&gt;.json</code>；敏感信息进报告</td>
+<td>真实环境显式设 <code>persist_credentials: false</code>；报告脱敏</td>
+</tr>
+</tbody>
+</table>
+
+<div class="warn">
+<strong>三条容易反直觉的既有规则</strong>（不是 bug，但和大多数人的预期相反，改动前务必先读 <code>BaseApi</code> 的文档字符串）：
+<ol style="margin:6px 0 0">
+<li>用例步骤按 <strong>方法名字典序</strong> 执行，不是代码书写顺序 —— 所以必须用 <code>test_01_</code> / <code>test_02_</code> 前缀控序。</li>
+<li>页面类自带 <code>prefix = "/xx"</code> 时 <strong>不叠加</strong> 环境 <code>api_prefix</code>，优先级最高；<code>prefix = ""</code> 表示「path 就是完整路径」。</li>
+<li>收到 <strong>403 不做任何自愈</strong> —— 在本项目里 403 语义是「已认证但无权访问」，是 9 处越权断言的测试目标本身；无差别重登会作废一个本来有效的会话并污染证据链。</li>
+</ol>
+</div>
+
+<h2>9 · 建议的后续开发顺序</h2>
+<ol>
+<li><strong>先还 P0 三笔债</strong>（删除能力 → 用例清理 → 环境预检）。这三件事不解决，接真实环境的任何一次运行都会留下无法回收的数据。</li>
+<li><strong>再加 P1 的口径统一</strong>（<code>assume_ttl</code> 换真实有效期、键名收敛、<code>role</code> 默认值改 None）。这些是「不会立刻炸但会持续误导」的问题。</li>
+<li><strong>然后才考虑扩展</strong>（新增页面/用例/鉴权），因为扩展点本身是零成本的，债不还就是放大债。</li>
+<li><strong>并发放最后</strong> —— 它需要先解决凭证落盘与连接池两个前置问题，收益也最容易被前两阶段的清理逻辑影响。</li>
+</ol>
+
+<hr>
+<p class="sub" style="text-align:center;margin:0">
+本文件由代码实测生成 · 与 <code>架构总览与差异清单.html</code> 互为补充（后者侧重规则与预期比对）<br>
+基线提交 <code>521ed1e</code> · 44 个 .py / 4,812 行
+</p>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+if (typeof mermaid !== 'undefined') {
+  mermaid.initialize({startOnLoad:false, theme:'base', themeVariables:{
+    primaryColor:'#E6F1FB', primaryBorderColor:'#185FA5', primaryTextColor:'#0C447C',
+    lineColor:'#5F5E5A', secondaryColor:'#EEEDFE', tertiaryColor:'#F1EFE8',
+    fontFamily:'system-ui,sans-serif', fontSize:'12px'}, class:{useMaxWidth:true}});
+  mermaid.run();
+} else {
+  document.querySelectorAll('.mermaid').forEach(function(el){
+    el.innerHTML = '<p style="color:#A32D2D;font-size:13px">类图渲染库未加载成功（需要访问 CDN）。完整类目与关系表见本文第 4、5 节。</p>';
+  });
+}
+</script>
+</body>
+</html>
