@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>接口自动化框架 · 架构总览与差异清单</title>
+<title>接口自动化框架 · 架构总览与规则差异清单</title>
 <style>
   :root{
     --bg:#faf9f7; --card:#ffffff; --line:#e5e3de; --line2:#d3d1c7;
     --t1:#2c2c2a; --t2:#5f5e5a; --t3:#888780;
-    --hi:#a32d2d; --hi-bg:#fcebeb;
-    --mid:#854f0b; --mid-bg:#faeeda;
+    --hi:#a32d2d; --hi-bg:#fcebeb; --hi-line:#f09595;
+    --mid:#854f0b; --mid-bg:#faeeda; --mid-line:#ef9f27;
     --low:#444441; --low-bg:#f1efe8;
-    --ok:#0f6e56; --ok-bg:#e1f5ee;
+    --ok:#0f6e56; --ok-bg:#e1f5ee; --ok-line:#5dcaa5;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
   }
   *{box-sizing:border-box}
@@ -27,7 +27,7 @@
   code{font-family:var(--mono);font-size:12.5px;background:#f1efe8;padding:1px 5px;border-radius:4px;color:var(--t1)}
   .path{font-family:var(--mono);font-size:12.5px;color:#185fa5}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0}
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0 0}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:18px 0 0}
   .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
   .stat b{display:block;font-size:20px;font-weight:600;line-height:1.3}
   .stat span{font-size:12px;color:var(--t2)}
@@ -37,10 +37,10 @@
   tbody tr:last-child td{border-bottom:none}
   .chip{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:20px;
     border:1px solid;white-space:nowrap;line-height:1.6}
-  .c-hi{color:var(--hi);background:var(--hi-bg);border-color:#f09595}
-  .c-mid{color:var(--mid);background:var(--mid-bg);border-color:#ef9f27}
+  .c-hi{color:var(--hi);background:var(--hi-bg);border-color:var(--hi-line)}
+  .c-mid{color:var(--mid);background:var(--mid-bg);border-color:var(--mid-line)}
   .c-low{color:var(--low);background:var(--low-bg);border-color:var(--line2)}
-  .c-ok{color:var(--ok);background:var(--ok-bg);border-color:#5dcaa5}
+  .c-ok{color:var(--ok);background:var(--ok-bg);border-color:var(--ok-line)}
   .tag{display:inline-block;font-size:11.5px;padding:0 6px;border-radius:5px;background:#f1efe8;
     color:var(--t2);font-family:var(--mono);white-space:nowrap}
   .ok{color:var(--ok);font-weight:600}
@@ -52,400 +52,551 @@
     color:var(--t2);font-size:13px;margin:12px 0}
   footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:var(--t3);font-size:12px}
   .legend{font-size:12px;color:var(--t2);margin-top:6px}
-  .legend span{margin-right:16px}
+  .legend span{margin-right:16px;white-space:nowrap}
   .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <h1>接口自动化框架 · 架构总览与差异清单</h1>
-  <p class="sub">面向页面的多账号接口自动化框架 · Python + requests · 生成于 2026-10-14</p>
+  <h1>接口自动化框架 · 架构总览与规则差异清单</h1>
+  <p class="sub">面向页面的多账号接口自动化框架 · Python + requests · 版本 2026-10-14（含 401 自愈修复）</p>
+  <p class="sub">本版替代同日 01:01 的旧版；旧版可 <code>git show 521ed1e:docs/架构总览与差异清单.html</code> 取回。</p>
 
   <div class="stats">
-    <div class="stat"><b>57</b><span>源码/配置文件数</span></div>
-    <div class="stat"><b>5,275</b><span>总行数</span></div>
+    <div class="stat"><b>4,812</b><span>Python 源码总行数（44 个 .py）</span></div>
+    <div class="stat"><b>8</b><span>流程页面类（*_page.py）</span></div>
+    <div class="stat"><b>6</b><span>业务域 API（*_api.py）</span></div>
     <div class="stat"><b>7</b><span>已注册鉴权策略</span></div>
-    <div class="stat"><b>8</b><span>流程页面模板</span></div>
-    <div class="stat"><b>4</b><span>套件（suites）</span></div>
-    <div class="stat"><b>2</b><span>环境（dev / session）</span></div>
+    <div class="stat"><b>5</b><span>用例类 · 32 个 test_ 步骤</span></div>
+    <div class="stat"><b>2</b><span>环境 / 套件 4 个</span></div>
+    <div class="stat"><b>12</b><span>账号（dev 3 + session 9）</span></div>
+    <div class="stat"><b>2,136</b><span>文档行数（5 篇 md）</span></div>
   </div>
 
-  <h2>一、架构总览</h2>
+  <h2>一、架构总览：六层单向依赖</h2>
 
-  <p>五层单向依赖，配置层被内核层读取，横切件挂在两侧。<strong>依赖方向不可逆</strong>：上层能调下层，下层不知道上层的存在 —— 这是「换掉真实接口时用例层不用改」的结构基础。</p>
+  <p>依赖方向<strong>严格单向、不可逆</strong>：上层能调下层，下层完全不知道上层存在。这是「把 mock 换成真实接口时用例层零改动」的结构基础。左侧五层是主链路，右侧两栏是横切件与产物。</p>
 
   <div class="svg-box">
-  <svg viewBox="0 0 1000 400" width="100%" role="img" xmlns="http://www.w3.org/2000/svg">
-    <title>框架分层架构</title>
-    <desc>从下到上依次为配置层、内核层、页面对象层、用例编排层、调度层，右侧为横切件。</desc>
+  <svg viewBox="0 0 1000 452" width="100%" role="img" xmlns="http://www.w3.org/2000/svg">
+    <title>框架六层架构与依赖方向</title>
+    <desc>自下而上为 config 配置层、core 内核层、apis 页面对象层、cases 用例编排层、runner 调度层，右侧为 suites 套件声明、tools 工具与 docs/reports/runtime 产物。</desc>
     <defs>
-      <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
         <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </marker>
     </defs>
 
     <g>
-      <rect x="30" y="30" width="640" height="60" rx="10" fill="#FBEAF0" stroke="#D4537E" stroke-width="0.5"/>
-      <text x="50" y="52" font-size="14" font-weight="600" fill="#4B1528" dominant-baseline="central">⑤ 调度层　runner/</text>
-      <text x="50" y="72" font-size="12" fill="#993556" dominant-baseline="central">main.py（206 行）· 装配置 → 装配 → 顺序执行 → 汇总报告 → 退出码 0/1/2</text>
+      <rect x="30" y="24" width="600" height="58" rx="10" fill="#FBEAF0" stroke="#D4537E" stroke-width="0.5"/>
+      <text x="50" y="45" font-size="14" font-weight="600" fill="#4B1528" dominant-baseline="central">⑤ 调度层　runner/　206 行</text>
+      <text x="50" y="65" font-size="12" fill="#993556" dominant-baseline="central">main.py：装配置 → 装配工厂 → 顺序执行 → 汇总 → 落 JSON 报告 → 退出码 0/1/2</text>
     </g>
-    <line x1="350" y1="90" x2="350" y2="118" stroke="#888780" stroke-width="1.5" marker-end="url(#a)"/>
+    <line x1="330" y1="82" x2="330" y2="106" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
 
     <g>
-      <rect x="30" y="124" width="640" height="60" rx="10" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
-      <text x="50" y="146" font-size="14" font-weight="600" fill="#412402" dominant-baseline="central">④ 用例编排层　cases/　（746 行）</text>
-      <text x="50" y="166" font-size="12" fill="#854F0B" dominant-baseline="central">base_case.py（test_ 字典序执行 + 结果收集）· 5 个用例类</text>
+      <rect x="30" y="112" width="600" height="58" rx="10" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+      <text x="50" y="133" font-size="14" font-weight="600" fill="#412402" dominant-baseline="central">④ 用例编排层　cases/　746 行　（base_case + 5 个用例）</text>
+      <text x="50" y="153" font-size="12" fill="#854F0B" dominant-baseline="central">生命周期 setup → test_01…（字典序）→ teardown；单步失败不中断，结果进 CaseResult</text>
     </g>
-    <line x1="350" y1="184" x2="350" y2="212" stroke="#888780" stroke-width="1.5" marker-end="url(#a)"/>
+    <line x1="330" y1="170" x2="330" y2="194" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
 
     <g>
-      <rect x="30" y="218" width="640" height="60" rx="10" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
-      <text x="50" y="240" font-size="14" font-weight="600" fill="#04342C" dominant-baseline="central">③ 页面对象层　apis/　（561 行）</text>
-      <text x="50" y="260" font-size="12" fill="#0F6E56" dominant-baseline="central">base_api.py（声明 account + prefix）· 8 个 *_page.py + 6 个业务域 api</text>
+      <rect x="30" y="200" width="600" height="58" rx="10" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
+      <text x="50" y="221" font-size="14" font-weight="600" fill="#04342C" dominant-baseline="central">③ 页面对象层　apis/　561 行　（base_api + 8 页面类 + 6 业务域 API）</text>
+      <text x="50" y="241" font-size="12" fill="#0F6E56" dominant-baseline="central">类上声明 account + prefix；方法体只有业务语义，零凭证代码</text>
     </g>
-    <line x1="350" y1="278" x2="350" y2="306" stroke="#888780" stroke-width="1.5" marker-end="url(#a)"/>
+    <line x1="330" y1="258" x2="330" y2="282" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
 
     <g>
-      <rect x="30" y="312" width="640" height="60" rx="10" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
-      <text x="50" y="334" font-size="14" font-weight="600" fill="#042C53" dominant-baseline="central">② 内核层　core/　（1205 行）</text>
-      <text x="50" y="354" font-size="12" fill="#185FA5" dominant-baseline="central">http_client（唯一出口）· session_factory · token_store · auth/ 7 策略 · context · response · assertions</text>
+      <rect x="30" y="288" width="600" height="58" rx="10" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
+      <text x="50" y="309" font-size="14" font-weight="600" fill="#042C53" dominant-baseline="central">② 内核层　core/　1,228 行　（13 个文件）</text>
+      <text x="50" y="329" font-size="12" fill="#185FA5" dominant-baseline="central">http_client（唯一出口）· session_factory · token_store · auth/7 策略 · context · response · assertions</text>
     </g>
-
-    <line x1="700" y1="342" x2="700" y2="196" stroke="#888780" stroke-width="1.5" marker-end="url(#a)"/>
-    <text x="712" y="270" font-size="12" fill="#5f5e5a" dominant-baseline="central">读取</text>
+    <line x1="330" y1="346" x2="330" y2="370" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
 
     <g>
-      <rect x="756" y="30" width="214" height="196" rx="10" fill="#EEEDFE" stroke="#7F77DD" stroke-width="0.5"/>
-      <text x="774" y="54" font-size="13" font-weight="600" fill="#26215C" dominant-baseline="central">① 配置层　config/　450 行</text>
-      <text x="774" y="78" font-size="12" fill="#534AB7" dominant-baseline="central">env/dev.yaml　　　3 账号</text>
-      <text x="774" y="98" font-size="12" fill="#534AB7" dominant-baseline="central">env/session.yaml　7 账号</text>
-      <text x="774" y="118" font-size="12" fill="#534AB7" dominant-baseline="central">roles.yaml（dev 表）</text>
-      <text x="774" y="138" font-size="12" fill="#534AB7" dominant-baseline="central">accounts.session.yaml</text>
-      <text x="774" y="158" font-size="12" fill="#534AB7" dominant-baseline="central">secrets.env（已 ignore）</text>
-      <text x="774" y="178" font-size="12" fill="#534AB7" dominant-baseline="central">settings.py　装载 + ${VAR}</text>
-      <text x="774" y="204" font-size="11.5" fill="#7F77DD" dominant-baseline="central">凭据唯一来源（名义上）</text>
+      <rect x="30" y="376" width="600" height="58" rx="10" fill="#EEEDFE" stroke="#7F77DD" stroke-width="0.5"/>
+      <text x="50" y="397" font-size="14" font-weight="600" fill="#26215C" dominant-baseline="central">① 配置层　config/　178 行 + 8 个 YAML</text>
+      <text x="50" y="417" font-size="12" fill="#534AB7" dominant-baseline="central">env/&lt;env&gt;.yaml（base_url/超时/前缀）· accounts*.yaml（账号表）· secrets.env（明文，不入库）</text>
     </g>
 
+    <line x1="660" y1="330" x2="730" y2="330" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+    <text x="676" y="320" font-size="11" fill="#5f5e5a" dominant-baseline="central">读取</text>
+
     <g>
-      <rect x="756" y="240" width="214" height="132" rx="10" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.5"/>
-      <text x="774" y="262" font-size="13" font-weight="600" fill="#2C2C2A" dominant-baseline="central">横切件</text>
-      <text x="774" y="286" font-size="12" fill="#5F5E5A" dominant-baseline="central">suites/　4 个套件声明</text>
-      <text x="774" y="306" font-size="12" fill="#5F5E5A" dominant-baseline="central">tools/　2 个 mock 服务 943 行</text>
-      <text x="774" y="326" font-size="12" fill="#5F5E5A" dominant-baseline="central">docs/　3 篇 678 行</text>
-      <text x="774" y="346" font-size="12" fill="#5F5E5A" dominant-baseline="central">reports/ · runtime/（自动生成）</text>
+      <rect x="736" y="24" width="234" height="128" rx="10" fill="#EAF3DE" stroke="#639922" stroke-width="0.5"/>
+      <text x="754" y="46" font-size="13" font-weight="600" fill="#173404" dominant-baseline="central">横切件</text>
+      <text x="754" y="68" font-size="11.5" fill="#3B6D11" dominant-baseline="central">suites/　4 个套件声明（用例顺序）</text>
+      <text x="754" y="88" font-size="11.5" fill="#3B6D11" dominant-baseline="central">tools/hit.py　单接口联调</text>
+      <text x="754" y="108" font-size="11.5" fill="#3B6D11" dominant-baseline="central">tools/repeat_case.py　万次重复</text>
+      <text x="754" y="128" font-size="11.5" fill="#3B6D11" dominant-baseline="central">tools/mock_server*.py　两个内存态 mock</text>
+      <text x="754" y="146" font-size="11.5" fill="#3B6D11" dominant-baseline="central">docs/　5 篇 md</text>
     </g>
 
     <g>
-      <rect x="30" y="248" width="0" height="0" fill="none"/>
+      <rect x="736" y="164" width="234" height="104" rx="10" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+      <text x="754" y="186" font-size="13" font-weight="600" fill="#2C2C2A" dominant-baseline="central">产物（已 gitignore）</text>
+      <text x="754" y="208" font-size="11.5" fill="#444441" dominant-baseline="central">reports/report-&lt;env&gt;-&lt;suite&gt;.json</text>
+      <text x="754" y="228" font-size="11.5" fill="#444441" dominant-baseline="central">runtime/credentials.&lt;env&gt;.json</text>
+      <text x="754" y="248" font-size="11.5" fill="#444441" dominant-baseline="central">（凭证落盘默认开启）</text>
     </g>
-    <text x="30" y="392" font-size="12" fill="#888780" dominant-baseline="central">依赖方向：runner → cases → apis → core → config　（箭头指向「被使用者」）</text>
+
+    <g>
+      <rect x="736" y="280" width="234" height="154" rx="10" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.5"/>
+      <text x="754" y="302" font-size="13" font-weight="600" fill="#501313" dominant-baseline="central">依赖铁律</text>
+      <text x="754" y="324" font-size="11.5" fill="#A32D2D" dominant-baseline="central">页面类不碰 base_url / 鉴权 / 重试</text>
+      <text x="754" y="344" font-size="11.5" fill="#A32D2D" dominant-baseline="central">用例不碰凭证，只声明 account</text>
+      <text x="754" y="364" font-size="11.5" fill="#A32D2D" dominant-baseline="central">请求出口唯一 = core/http_client</text>
+      <text x="754" y="384" font-size="11.5" fill="#A32D2D" dominant-baseline="central">一个账号 = 一个 Session（隔离）</text>
+      <text x="754" y="404" font-size="11.5" fill="#A32D2D" dominant-baseline="central">反向下沉调用一律视为 bug</text>
+      <text x="754" y="424" font-size="11.5" fill="#A32D2D" dominant-baseline="central">配置上移：前缀放环境，不放页面</text>
+    </g>
   </svg>
   </div>
 
-  <h3>双环境 · 双账号表（这是全项目最容易踩坑的地方）</h3>
+  <h2>二、模块依赖与调用关系</h2>
 
-  <p>项目里同时存在两套互不相通的账号体系，各自服务一个 mock 服务，且<strong>没有任何代码校验「当前套件所需的账号是否在当前环境里存在」</strong>：</p>
-
+  <h3>2.1 实际依赖边（静态 import）</h3>
   <table>
-    <thead>
-      <tr><th>环境</th><th>配置文件</th><th>顶层键</th><th>账号</th><th>列表接口</th><th>mock 端口</th></tr>
-    </thead>
+    <thead><tr><th>调用方</th><th>被依赖</th><th>性质</th></tr></thead>
     <tbody>
-      <tr>
-        <td><span class="tag">--env dev</span></td>
-        <td class="path">config/env/dev.yaml</td>
-        <td><code>roles:</code><br><span class="sub">（文件名 roles.yaml）</span></td>
-        <td>admin / merchant / guest</td>
-        <td class="path">tools/mock_server.py</td>
-        <td>18888</td>
-      </tr>
-      <tr>
-        <td><span class="tag">--env session</span></td>
-        <td class="path">config/env/session.yaml</td>
-        <td><code>accounts:</code></td>
-        <td>buyer_a / buyer_b / ops_admin / partner_bot / test1 / test34 / test38 / test666<br>
-          <span class="sub">+ guest_web（无凭证）</span></td>
-        <td class="path">tools/mock_server_session.py</td>
-        <td>18889</td>
-      </tr>
+      <tr><td><span class="tag">runner/main.py</span></td><td>config.settings · core.{context, session_factory, token_store, logger, auth} · suites/*.yaml</td><td>装配与调度，位于最外层</td></tr>
+      <tr><td><span class="tag">cases/*</span></td><td>apis.base_api · core.{context, response, assertions}</td><td>只依赖抽象，不依赖具体页面实现</td></tr>
+      <tr><td><span class="tag">apis/*</span></td><td>core.context（仅此一项）+ apis.base_api</td><td>页面类不 import 任何鉴权模块</td></tr>
+      <tr><td><span class="tag">core/session_factory</span></td><td>core.{auth, http_client, token_store, exceptions}</td><td>唯一把「账号 × 鉴权方式」拼起来的地方</td></tr>
+      <tr><td><span class="tag">core/http_client</span></td><td>core.auth.base · core.response · core.exceptions · requests</td><td>全框架唯一 HTTP 出口</td></tr>
+      <tr><td><span class="tag">core/auth/strategies</span></td><td>core.auth.registry · core.auth.base</td><td>@register 注册表，7 种策略</td></tr>
+      <tr><td><span class="tag">config/settings</span></td><td>core.exceptions · yaml · os.environ</td><td>被 kernel 读取，不反向依赖</td></tr>
+      <tr><td><span class="tag">tools/hit.py · repeat_case.py</span></td><td>与 runner/main.py <strong>同源</strong>的装配链路</td><td>保证「跑一次」与「跑套件」结果一致</td></tr>
+      <tr><td><span class="tag">tools/mock_server*.py</span></td><td>stdlib http.server · config/secrets.env</td><td>不依赖框架代码，可独立起停</td></tr>
     </tbody>
   </table>
 
-  <p><strong>实测：交叉组合直接崩，且崩在运行时而不是启动时。</strong></p>
+  <h3>2.2 两套账号域并存（全项目最易踩坑处）</h3>
+  <p><span class="path">apis/</span> 下两种页面对象声明的是<strong>两张不同账号表</strong>里的账号。这不是 bug，但它是「环境与套件隐式耦合」的根因：页面类不校验账号属于当前环境，错误在首次构造页面对象时才暴露。</p>
 
-  <table>
-    <thead><tr><th>命令</th><th>结果</th></tr></thead>
-    <tbody>
-      <tr>
-        <td class="path">--env dev --suite all_pages</td>
-        <td class="bad">RoleNotDefined: 未定义的账号 'test1'，accounts.yaml 里可用: ['admin', 'guest', 'merchant']</td>
-      </tr>
-      <tr>
-        <td class="path">--env session --suite regression</td>
-        <td class="bad">RoleNotDefined: 未定义的账号 'guest'（AuthCase 与 OrderFlowCase 双双失败）</td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="svg-box">
+  <svg viewBox="0 0 1000 300" width="100%" role="img" xmlns="http://www.w3.org/2000/svg">
+    <title>两套账号域与环境的隐式耦合</title>
+    <desc>11 个页面类声明 session 账号，3 个业务域 API 声明 dev 账号，套件与账号表无预检。</desc>
+    <g>
+      <rect x="30" y="24" width="450" height="252" rx="14" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
+      <text x="52" y="50" font-size="14" font-weight="600" fill="#042C53" dominant-baseline="central">--env session　→ accounts.session.yaml（9 账号）</text>
+      <text x="52" y="72" font-size="11.5" fill="#185FA5" dominant-baseline="central">11 个页面对象声明本表账号</text>
+      <rect x="52" y="88" width="406" height="30" rx="6" fill="#B5D4F4" stroke="#378ADD" stroke-width="0.5"/>
+      <text x="64" y="103" font-size="11.5" fill="#042C53" dominant-baseline="central">8 个 *_page.py：test1 · test34 · test38 · test666</text>
+      <rect x="52" y="126" width="406" height="30" rx="6" fill="#B5D4F4" stroke="#378ADD" stroke-width="0.5"/>
+      <text x="64" y="141" font-size="11.5" fill="#042C53" dominant-baseline="central">flow_api=test1 · shop_api=buyer_a · partner_api=partner_bot</text>
+      <text x="52" y="176" font-size="11.5" fill="#185FA5" dominant-baseline="central">套件：all_pages · multi_account · account_roles</text>
+      <rect x="52" y="192" width="406" height="30" rx="6" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
+      <text x="64" y="207" font-size="11.5" fill="#04342C" dominant-baseline="central">api_prefix = /flow　（前缀已上移，页面类不写）</text>
+      <text x="52" y="242" font-size="11.5" fill="#185FA5" dominant-baseline="central">链路：base_url + /flow + /cases/&lt;id&gt;/fae-summary</text>
+      <text x="52" y="262" font-size="11.5" fill="#185FA5" dominant-baseline="central">mock：tools/mock_server_session.py @ 127.0.0.1:18889</text>
+    </g>
 
-  <div class="note">
-    根因：<code>apis/order_api.py:15</code> <code>role = "merchant"</code>、<code>apis/user_api.py:10</code> <code>role = "admin"</code>、
-    <code>apis/product_api.py:10</code> <code>role = "guest"</code> 三个页面属 dev 表；
-    而 8 个 <code>*_page.py</code>、<code>apis/flow_api.py:25</code>、<code>apis/shop_api.py:20</code>、<code>apis/partner_api.py:14</code> 属 session 表。
-    两组合并运行必然失败，但框架只在<strong>第一次构造页面对象时</strong>才报错。
+    <g>
+      <rect x="520" y="24" width="450" height="252" rx="14" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+      <text x="542" y="50" font-size="14" font-weight="600" fill="#412402" dominant-baseline="central">--env dev　→ config/roles.yaml（3 账号）</text>
+      <text x="542" y="72" font-size="11.5" fill="#854F0B" dominant-baseline="central">3 个业务域 API 声明本表账号</text>
+      <rect x="542" y="88" width="406" height="30" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+      <text x="554" y="103" font-size="11.5" fill="#412402" dominant-baseline="central">order_api: role=merchant　prefix=/orders</text>
+      <rect x="542" y="126" width="406" height="30" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+      <text x="554" y="141" font-size="11.5" fill="#412402" dominant-baseline="central">product_api: role=guest　prefix=/products</text>
+      <rect x="542" y="164" width="406" height="30" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+      <text x="554" y="179" font-size="11.5" fill="#412402" dominant-baseline="central">user_api: role=admin　prefix=/users</text>
+      <text x="542" y="214" font-size="11.5" fill="#854F0B" dominant-baseline="central">套件：regression（auth_case + order_flow_case）</text>
+      <rect x="542" y="230" width="406" height="30" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.5"/>
+      <text x="554" y="245" font-size="11.5" fill="#501313" dominant-baseline="central">⚠ 拿错表 → RoleNotDefined，构造页面对象时才报</text>
+    </g>
+  </svg>
   </div>
 
-  <h2>二、一次请求的完整数据流</h2>
+  <div class="note">
+    <strong>实测后果：</strong><code>--env session --suite regression</code> 会 0/2 全红 —— 套件用的是 dev 账号表里的账号，而 session 表里没有 <code>merchant</code>/<code>guest</code> 这两个名字。这不是框架 bug，但没有任何预检会提前告诉你。
+  </div>
+
+  <h2>三、一次请求的完整数据流</h2>
+
+  <p>从用例到响应共 8 步，其中只有第 3 步与第 6 步涉及鉴权，且这两步都在 <span class="path">HttpClient</span> 内部完成 —— 页面类看到的只是一句 <code>self.post(path, json=...)</code>。</p>
+
+  <div class="svg-box">
+  <svg viewBox="0 0 1000 470" width="100%" role="img" xmlns="http://www.w3.org/2000/svg">
+    <title>一次接口调用的完整数据流</title>
+    <desc>用例调用页面方法，页面拼前缀后交给 HttpClient，注入凭证与 CSRF 后发出请求，响应封装为 ApiResponse 回传断言。</desc>
+    <defs>
+      <marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+    </defs>
+
+    <rect x="30" y="20" width="940" height="42" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+    <text x="46" y="41" font-size="12.5" fill="#412402" dominant-baseline="central"><tspan font-weight="600">① 用例层</tspan>　self.check("FAE 汇总", self.fae_summary.submit_fae_summary("${case_id}"), 200)</text>
+    <line x1="500" y1="62" x2="500" y2="82" stroke="#888780" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+    <rect x="30" y="88" width="940" height="42" rx="8" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
+    <text x="46" y="109" font-size="12.5" fill="#04342C" dominant-baseline="central"><tspan font-weight="600">② 页面对象</tspan>　self.post("/cases/7/fae-summary", json=...) → self._url(path) 拼上 self.prefix("/flow")</text>
+    <line x1="500" y1="130" x2="500" y2="150" stroke="#888780" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+    <rect x="30" y="156" width="940" height="42" rx="8" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
+    <text x="46" y="177" font-size="12.5" fill="#042C53" dominant-baseline="central"><tspan font-weight="600">③ HttpClient.request()</tspan>　token_provider() → SessionFactory：缓存有效则直接返回，否则用该账号 login 定义登录一次</text>
+    <line x1="500" y1="198" x2="500" y2="218" stroke="#888780" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+    <rect x="30" y="224" width="940" height="42" rx="8" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
+    <text x="46" y="245" font-size="12.5" fill="#042C53" dominant-baseline="central"><tspan font-weight="600">④ 鉴权策略 prepare()</tspan>　cookie 策略从本账号 CookieJar 读 csrftoken → 回填 X-CSRFToken 头（写操作才需要）</text>
+    <line x1="500" y1="266" x2="500" y2="286" stroke="#888780" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+    <rect x="30" y="292" width="940" height="42" rx="8" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
+    <text x="46" y="313" font-size="12.5" fill="#042C53" dominant-baseline="central"><tspan font-weight="600">⑤ 鉴权策略 apply()</tspan>　按账号配置注入 header / query / cookie；会话类账号返回 None（凭证在 Session 里，自动带）</text>
+    <line x1="500" y1="334" x2="500" y2="354" stroke="#888780" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+    <rect x="30" y="360" width="940" height="42" rx="8" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+    <text x="46" y="381" font-size="12.5" fill="#2C2C2A" dominant-baseline="central"><tspan font-weight="600">⑥ session.request()</tspan>　该账号独占的 requests.Session 发出 → base_url + /flow + /cases/7/fae-summary → mock 18889 或真实服务</text>
+    <line x1="500" y1="402" x2="500" y2="422" stroke="#888780" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+    <rect x="30" y="428" width="940" height="42" rx="8" fill="#FBEAF0" stroke="#D4537E" stroke-width="0.5"/>
+    <text x="46" y="449" font-size="12.5" fill="#4B1528" dominant-baseline="central"><tspan font-weight="600">⑦ ApiResponse</tspan>　status_code · text · elapsed_ms · account + request_kwargs 快照 → <tspan font-weight="600">⑧ 断言</tspan> 回到用例，写进 CaseResult</text>
+  </svg>
+  </div>
+
+  <h2>四、鉴权自愈与重试（控制流）</h2>
+
+  <p>重试有三条独立通路，都收口在 <span class="path">core/http_client.py::request()</span> 的同一个 <code>while True</code> 里：网络异常重试、5xx 重试、<strong>401 自愈</strong>。前两者共用 <code>attempt</code> 计数，第三者用独立标志 <code>auth_retried</code>。</p>
+
+  <div class="svg-box">
+  <svg viewBox="0 0 1000 420" width="100%" role="img" xmlns="http://www.w3.org/2000/svg">
+    <title>401 自愈状态机与三条重试通路</title>
+    <desc>请求发出后按状态码分流：网络异常与 5xx 走 attempt 重试，401 走 auth_retried 自愈一次，403 不重试。</desc>
+    <defs>
+      <marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+    </defs>
+
+    <rect x="360" y="20" width="280" height="42" rx="8" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+    <text x="500" y="41" font-size="12.5" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">request()　attempt += 1　auth_retried = False</text>
+    <line x1="500" y1="62" x2="500" y2="82" stroke="#888780" stroke-width="1.5" marker-end="url(#ar3)"/>
+
+    <rect x="360" y="88" width="280" height="42" rx="8" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
+    <text x="500" y="109" font-size="12.5" fill="#042C53" text-anchor="middle" dominant-baseline="central">注入凭证 + CSRF → session.request()</text>
+    <line x1="500" y1="130" x2="500" y2="152" stroke="#888780" stroke-width="1.5" marker-end="url(#ar3)"/>
+
+    <rect x="330" y="158" width="340" height="52" rx="8" fill="#EEEDFE" stroke="#7F77DD" stroke-width="0.5"/>
+    <text x="500" y="176" font-size="12.5" fill="#26215C" text-anchor="middle" dominant-baseline="central">按状态码分流</text>
+    <text x="500" y="195" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">网络异常 / 5xx / 401 / 403 / 其他</text>
+
+    <line x1="330" y1="184" x2="150" y2="184" stroke="#888780" stroke-width="1.5"/>
+    <line x1="150" y1="184" x2="150" y2="252" stroke="#888780" stroke-width="1.5" marker-end="url(#ar3)"/>
+    <rect x="30" y="258" width="240" height="66" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+    <text x="150" y="278" font-size="12.5" fill="#412402" text-anchor="middle" dominant-baseline="central">attempt ≤ retries（默认 2）</text>
+    <text x="150" y="298" font-size="11.5" fill="#854F0B" text-anchor="middle" dominant-baseline="central">退避 backoff × attempt 秒后</text>
+    <text x="150" y="314" font-size="11.5" fill="#854F0B" text-anchor="middle" dominant-baseline="central">continue（回到 request 头部）</text>
+
+    <line x1="670" y1="184" x2="850" y2="184" stroke="#888780" stroke-width="1.5"/>
+    <line x1="850" y1="184" x2="850" y2="252" stroke="#888780" stroke-width="1.5" marker-end="url(#ar3)"/>
+    <rect x="730" y="258" width="240" height="66" rx="8" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
+    <text x="850" y="278" font-size="12.5" fill="#04342C" text-anchor="middle" dominant-baseline="central">401 且四条条件同时成立</text>
+    <text x="850" y="298" font-size="11.5" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">auth_retried = True → _renew(本人)</text>
+    <text x="850" y="314" font-size="11.5" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">只作废该账号会话 → 重发原请求</text>
+
+    <rect x="30" y="342" width="940" height="58" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.5"/>
+    <text x="46" y="362" font-size="12.5" fill="#501313" dominant-baseline="central"><tspan font-weight="600">401 的四条触发条件：</tspan>① 状态码 401　② auth=True（登录请求自身走 auth=False，不会递归）</text>
+    <text x="46" y="382" font-size="12.5" fill="#501313" dominant-baseline="central">③ 本次请求尚未自愈过　④ 该账号 requires_credential（游客 none / Basic 不重登）　→ 上限：<tspan font-weight="600">每个请求恰好 1 次</tspan></text>
+  </svg>
+  </div>
+
+  <table>
+    <thead><tr><th>场景</th><th>处理</th><th>依据</th></tr></thead>
+    <tbody>
+      <tr><td>网络异常（连接失败/超时）</td><td>按 <code>settings.retries</code>（默认 2）重试，退避 <code>backoff × attempt</code> 秒</td><td>http_client.py:115-119</td></tr>
+      <tr><td>响应 5xx</td><td>同上，共用 <code>attempt</code></td><td>http_client.py:159-161</td></tr>
+      <tr><td>响应 401 且账号需凭证</td><td>作废本人会话 → 重新登录 → <strong>原样重发一次</strong>；上限 1 次，由 <code>auth_retried</code> 独立保证</td><td>http_client.py:130-150</td></tr>
+      <tr><td>重登后仍是 401</td><td>不再重试，原样返回 401 + 一条 warning（提示查口令/账号状态/脏缓存）</td><td>http_client.py:152-157</td></tr>
+      <tr><td>游客（<code>type: none</code>）收到 401</td><td><strong>不重登</strong>：本来就没带凭证，重登无意义</td><td>同理 Basic</td></tr>
+      <tr><td>响应 403</td><td><strong>不重试、不自愈</strong>，直接返回</td><td>见 §7 规则 R7</td></tr>
+    </tbody>
+  </table>
+
+  <h2>五、执行流程：8 阶段线性状态机</h2>
+
+  <p>业务单据的状态机是<strong>强制线性</strong>的：每个环节只接受「上一步刚完成」的状态，越阶一律 409。这既是「顺序约束真的被校验」的保证，也是<strong>造数无法跳阶、无法并行</strong>的根本原因。</p>
 
   <div class="svg-box">
   <svg viewBox="0 0 1000 250" width="100%" role="img" xmlns="http://www.w3.org/2000/svg">
-    <title>一次页面方法调用的数据流</title>
-    <desc>从用例调用页面方法，经 HttpClient、SessionFactory、TokenStore、AuthStrategy，最终落到该账号专属的 requests.Session。</desc>
+    <title>8 阶段线性状态机与各阶段操作账号</title>
+    <desc>申请、专家评审、FAE 汇总、IPQ 审核、组长审核、排查中、排查汇总、完成，每阶段标注操作账号。</desc>
     <defs>
-      <marker id="b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <marker id="ar4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
         <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </marker>
     </defs>
-    <g>
-      <rect x="24" y="34" width="164" height="62" rx="9" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
-      <text x="106" y="56" font-size="13" font-weight="600" fill="#412402" text-anchor="middle" dominant-baseline="central">用例</text>
-      <text x="106" y="76" font-size="11.5" fill="#854F0B" text-anchor="middle" dominant-baseline="central">self.apply_page.post()</text>
-    </g>
-    <line x1="188" y1="65" x2="222" y2="65" stroke="#888780" stroke-width="1.5" marker-end="url(#b)"/>
-    <g>
-      <rect x="228" y="34" width="164" height="62" rx="9" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
-      <text x="310" y="56" font-size="13" font-weight="600" fill="#04342C" text-anchor="middle" dominant-baseline="central">BaseApi</text>
-      <text x="310" y="76" font-size="11.5" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">拼 prefix + path</text>
-    </g>
-    <line x1="392" y1="65" x2="426" y2="65" stroke="#888780" stroke-width="1.5" marker-end="url(#b)"/>
-    <g>
-      <rect x="432" y="34" width="164" height="62" rx="9" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
-      <text x="514" y="56" font-size="13" font-weight="600" fill="#042C53" text-anchor="middle" dominant-baseline="central">HttpClient</text>
-      <text x="514" y="76" font-size="11.5" fill="#185FA5" text-anchor="middle" dominant-baseline="central">唯一请求出口</text>
-    </g>
-    <line x1="596" y1="65" x2="630" y2="65" stroke="#888780" stroke-width="1.5" marker-end="url(#b)"/>
-    <g>
-      <rect x="636" y="34" width="164" height="62" rx="9" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
-      <text x="718" y="56" font-size="13" font-weight="600" fill="#042C53" text-anchor="middle" dominant-baseline="central">SessionFactory</text>
-      <text x="718" y="76" font-size="11.5" fill="#185FA5" text-anchor="middle" dominant-baseline="central">账号 → 客户端</text>
-    </g>
-    <line x1="800" y1="65" x2="834" y2="65" stroke="#888780" stroke-width="1.5" marker-end="url(#b)"/>
-    <g>
-      <rect x="840" y="34" width="136" height="62" rx="9" fill="#EEEDFE" stroke="#7F77DD" stroke-width="0.5"/>
-      <text x="908" y="56" font-size="13" font-weight="600" fill="#26215C" text-anchor="middle" dominant-baseline="central">TokenStore</text>
-      <text x="908" y="76" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">命中即复用</text>
+
+    <g font-size="11.5">
+      <rect x="30" y="30" width="108" height="62" rx="8" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
+      <text x="84" y="50" font-size="12.5" font-weight="600" fill="#04342C" text-anchor="middle" dominant-baseline="central">① 申请</text>
+      <text x="84" y="68" font-size="11" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">POST /cases</text>
+      <text x="84" y="83" font-size="11" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">test1</text>
+
+      <rect x="152" y="30" width="108" height="62" rx="8" fill="#EAF3DE" stroke="#639922" stroke-width="0.5"/>
+      <text x="206" y="50" font-size="12.5" font-weight="600" fill="#173404" text-anchor="middle" dominant-baseline="central">② 专家评审</text>
+      <text x="206" y="68" font-size="11" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">expert-review</text>
+      <text x="206" y="83" font-size="11" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">test34</text>
+
+      <rect x="274" y="30" width="108" height="62" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+      <text x="328" y="50" font-size="12.5" font-weight="600" fill="#412402" text-anchor="middle" dominant-baseline="central">③ FAE 汇总</text>
+      <text x="328" y="68" font-size="11" fill="#854F0B" text-anchor="middle" dominant-baseline="central">fae-summary</text>
+      <text x="328" y="83" font-size="11" fill="#854F0B" text-anchor="middle" dominant-baseline="central">test1</text>
+
+      <rect x="396" y="30" width="108" height="62" rx="8" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+      <text x="450" y="50" font-size="12.5" font-weight="600" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">④ IPQ 审核</text>
+      <text x="450" y="68" font-size="11" fill="#444441" text-anchor="middle" dominant-baseline="central">ipq-review</text>
+      <text x="450" y="83" font-size="11" fill="#444441" text-anchor="middle" dominant-baseline="central">test38</text>
+
+      <rect x="518" y="30" width="108" height="62" rx="8" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+      <text x="572" y="50" font-size="12.5" font-weight="600" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">⑤ 组长审核</text>
+      <text x="572" y="68" font-size="11" fill="#444441" text-anchor="middle" dominant-baseline="central">fae-lead-review</text>
+      <text x="572" y="83" font-size="11" fill="#444441" text-anchor="middle" dominant-baseline="central">test34</text>
+
+      <rect x="640" y="30" width="108" height="62" rx="8" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+      <text x="694" y="50" font-size="12.5" font-weight="600" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">⑥ 排查中</text>
+      <text x="694" y="68" font-size="11" fill="#444441" text-anchor="middle" dominant-baseline="central">investigate</text>
+      <text x="694" y="83" font-size="11" fill="#444441" text-anchor="middle" dominant-baseline="central">test666</text>
+
+      <rect x="762" y="30" width="108" height="62" rx="8" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+      <text x="816" y="50" font-size="12.5" font-weight="600" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">⑦ 排查汇总</text>
+      <text x="816" y="68" font-size="11" fill="#444441" text-anchor="middle" dominant-baseline="central">investigation-summary</text>
+      <text x="816" y="83" font-size="11" fill="#444441" text-anchor="middle" dominant-baseline="central">test666</text>
+
+      <rect x="884" y="30" width="86" height="62" rx="8" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+      <text x="927" y="50" font-size="12.5" font-weight="600" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">⑧ 完成</text>
+      <text x="927" y="68" font-size="11" fill="#444441" text-anchor="middle" dominant-baseline="central">complete</text>
+      <text x="927" y="83" font-size="11" fill="#444441" text-anchor="middle" dominant-baseline="central">test1</text>
     </g>
 
-    <path d="M908 100 L908 140 L718 140 L718 172" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#b)"/>
-    <g>
-      <rect x="576" y="176" width="292" height="56" rx="9" fill="#EEEDFE" stroke="#7F77DD" stroke-width="0.5"/>
-      <text x="722" y="196" font-size="13" font-weight="600" fill="#26215C" text-anchor="middle" dominant-baseline="central">AuthStrategy · cookie/bearer/…</text>
-      <text x="722" y="216" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">prepare() 回填 CSRF → apply() 注入</text>
+    <g stroke="#888780" stroke-width="1.5" marker-end="url(#ar4)">
+      <line x1="138" y1="61" x2="150" y2="61"/>
+      <line x1="260" y1="61" x2="272" y2="61"/>
+      <line x1="382" y1="61" x2="394" y2="61"/>
+      <line x1="504" y1="61" x2="516" y2="61"/>
+      <line x1="626" y1="61" x2="638" y2="61"/>
+      <line x1="748" y1="61" x2="760" y2="61"/>
+      <line x1="870" y1="61" x2="882" y2="61"/>
     </g>
-    <path d="M576 204 L480 204" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#b)"/>
-    <g>
-      <rect x="214" y="176" width="262" height="56" rx="9" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
-      <text x="345" y="196" font-size="13" font-weight="600" fill="#04342C" text-anchor="middle" dominant-baseline="central">本账号专属 requests.Session</text>
-      <text x="345" y="216" font-size="11.5" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">CookieJar 隔离 —— 串号的物理防线</text>
-    </g>
-    <path d="M214 204 L150 204 L150 104" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#b)"/>
-    <g>
-      <rect x="24" y="176" width="164" height="56" rx="9" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
-      <text x="106" y="196" font-size="13" font-weight="600" fill="#04342C" text-anchor="middle" dominant-baseline="central">ApiResponse</text>
-      <text x="106" y="216" font-size="11.5" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">.check() 断言 → 报告</text>
-    </g>
-    <text x="24" y="20" font-size="12" fill="#888780" dominant-baseline="central">首帧构造：ctx.client(account) 一次完成「策略 + 客户端 + 凭证提供器」的装配绑定；之后每次请求只走后半段。</text>
+
+    <text x="30" y="122" font-size="12" fill="#5f5e5a" dominant-baseline="central">状态：applied → expert_reviewed → fae_summarized → ipq_approved → lead_approved → investigating → investigation_summarized → completed</text>
+
+    <rect x="30" y="146" width="940" height="40" rx="8" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
+    <text x="46" y="166" font-size="12" fill="#04342C" dominant-baseline="central"><tspan font-weight="600">性能造数封顶深度</tspan>　止于 ③ FAE 汇总（fae_summarized）：只需 3 个接口（申请 / 专家评审 / FAE 汇总）、2 个账号（test1 / test34）</text>
+    <text x="46" y="180" font-size="11.5" fill="#0F6E56" dominant-baseline="central">解读 A「三环节各积压 1 万笔」= 6 万请求 / 库内 3 万笔　·　解读 B「1 万笔走到 FAE 汇总」= 3 万请求 / 库内 1 万笔</text>
+
+    <rect x="30" y="196" width="940" height="40" rx="8" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+    <text x="46" y="212" font-size="12" fill="#2C2C2A" dominant-baseline="central"><tspan font-weight="600">④~⑧ 五个环节本次不调用</tspan>　原始需求「每个环节都造数」若全走完：每笔 8 次请求，解读 A 需 36 万请求、解读 B 需 8 万请求</text>
+    <text x="46" y="228" font-size="11.5" fill="#444441" dominant-baseline="central">越阶返回 409（mock_server_session.py:167-175, 617）→ 无法跳阶、无法并行同一笔单据的各环节</text>
   </svg>
   </div>
 
-  <h2>三、发现清单 · 不一致（同一件事有两种口径）</h2>
+  <h2>六、关键技术栈与配置清单</h2>
 
   <table>
-    <thead><tr><th style="width:64px">级别</th><th style="width:26%">问题</th><th>证据（位置）</th><th style="width:26%">影响</th></tr></thead>
+    <thead><tr><th>维度</th><th>选型</th><th>说明</th></tr></thead>
     <tbody>
-      <tr>
-        <td><span class="chip c-hi">高</span></td>
-        <td>dev mock 硬编码账号与明文口令</td>
-        <td class="path">tools/mock_server.py:21-25</td>
-        <td>与 <code>secrets.env:5-8</code> 重复；改 <code>secrets.env</code> 不会同步 → dev 套件登录 401。违背 README 约定 5「凭据只有两个入口」。<br><span class="sub">「服务端不再硬编码账号」的改造只做在了 session 版，dev 版仍是遗留。</span></td>
-      </tr>
-      <tr>
-        <td><span class="chip c-hi">高</span></td>
-        <td>环境与套件隐式耦合，无启动校验</td>
-        <td class="path">runner/main.py:174<br>apis/order_api.py:15<br>apis/user_api.py:10</td>
-        <td>交叉组合必崩（见上文实测）。没有「套件所需账号 ⊆ 当前环境账号表」的预检，失败发生在构造页面对象时，报错信息还叫 <code>RoleNotDefined</code>。</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-mid">中</span></td>
-        <td>授权口径两套：会话快照 vs 注册表实时值</td>
-        <td class="path">mock_server_session.py:256<br>mock_server_session.py:320-323</td>
-        <td><code>_require()</code> 用登录时冻结的 <code>sess["role"]</code>；<code>/me</code> 用注册表实时值。角色一旦变更，<code>/me</code> 报新角色、接口按旧角色判 403 → 测试结论自相矛盾。</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-mid">中</span></td>
-        <td>索引键两套：条目名 vs username</td>
-        <td class="path">settings.py:136<br>mock_server_session.py:133</td>
-        <td>客户端以 YAML <strong>条目名</strong>为键，服务端以 <strong>username</strong> 为键。当前 7 个账号恰好同名，属约定巧合；改 <code>TEST*_USERNAME</code> 即漂移。</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-mid">中</span></td>
-        <td>mock 服务端硬编码注册表路径与键名</td>
-        <td class="path">mock_server_session.py:52<br>mock_server_session.py:106</td>
-        <td>路径写死 <code>config/accounts.session.yaml</code>、只认 <code>accounts:</code> 键（无 <code>roles:</code> 回落）；而客户端走 <code>session.yaml:15</code> + <code>settings.py:131</code> 双键兼容。两侧口径不同。</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-mid">中</span></td>
-        <td>README 目录结构漏列关键文件</td>
-        <td class="path">README.md:20-65</td>
-        <td>漏 <code>config/env/session.yaml</code>、<code>config/accounts.session.yaml</code>、<code>tools/mock_server_session.py</code>、<code>docs/</code>、<code>requirements.txt</code>；<code>suites/</code> 只写了 regression。</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-mid">中</span></td>
-        <td>README 示例代码已过时</td>
-        <td class="path">README.md:113-123</td>
-        <td>「约定 2」写 <code>role = "merchant"</code>、<code>super().__init__(ctx, role)</code>、<code>ctx.client(self.role)</code>；按现签名 <code>BaseApi.__init__(ctx, account, role)</code>（<code>base_api.py:35</code>），role 会被当成 account 传入。与 <code>base_api.py</code> 自身 docstring 冲突。</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-mid">中</span></td>
-        <td>README 的账号清单含服务端并不存在的账号</td>
-        <td class="path">README.md:299-302</td>
-        <td>第八节把 <code>guest_web</code>/<code>partner_bot</code> 列为"已登记账号"，但服务端注册表不含这两者（实测 <code>被跳过的条目: ['guest_web（缺少 username / password）']</code>）。</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-low">低</span></td>
-        <td>键名与内容语义错位</td>
-        <td class="path">config/env/dev.yaml:11</td>
-        <td>键叫 <code>accounts_file</code>，指向的却是 <code>config/roles.yaml</code>（顶层键 <code>roles:</code>）。能跑靠 <code>settings.py:131</code> 的兼容分支，不等于语义一致。</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-low">低</span></td>
-        <td>role → account 迁移的兼容别名散落 11 处</td>
-        <td class="path">settings.py:68 / :143<br>session_factory.py:49<br>token_store.py:35 · response.py:68<br>http_client.py:57 · base_api.py:27,59<br>context.py:61 · exceptions.py:11,18<br>main.py:45,49</td>
-        <td>没有集中登记的"遗留别名表"，新人容易把 <code>self.role</code> 当业务角色用。<code>report</code> 里字段叫 <code>account</code>，README 却写"角色归属"（<code>README.md:263-264</code> vs <code>main.py:99</code>）。</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-low">低</span></td>
-        <td>文档三份 + README 内容重叠</td>
-        <td class="path">docs/ 678 行 · README 467 行</td>
-        <td>鉴权选型、多账号方案与 README 二/三/八节重复；<code>docs/OrderFlowCase-运行原理.md:59</code> 仍写 <code>settings.roles_file</code> + <code>config/roles.yaml</code> 旧口径。</td>
-      </tr>
+      <tr><td>语言 / 运行时</td><td>Python 3.13（隔离 venv）</td><td>不使用 pytest 等测试框架，runner 与用例基类全部自研</td></tr>
+      <tr><td>HTTP 客户端</td><td><code>requests</code></td><td>每账号一个 <code>requests.Session</code>，CookieJar 隔离的物理保证</td></tr>
+      <tr><td>配置格式</td><td>YAML + <code>key=value</code> 凭据文件</td><td>环境配置、账号表、套件、凭据四种文件各司其职</td></tr>
+      <tr><td>鉴权机制</td><td>策略模式 + <code>@register</code> 注册表</td><td>7 种：cookie / bearer / header / query / basic / signature / none</td></tr>
+      <tr><td>Mock 服务</td><td><code>http.server.ThreadingHTTPServer</code></td><td>内存态存储 + <code>threading.Lock</code>；<strong>只有 GET/POST/PUT，无 DELETE 路由</strong></td></tr>
+      <tr><td>结果表达</td><td>退出码 0 / 1 / 2 + JSON 报告</td><td>0 全通过 · 1 有失败 · 2 框架级错误（CI 友好）</td></tr>
+      <tr><td>凭据管理</td><td><code>secrets.env</code> + <code>${VAR}</code> 展开</td><td><code>os.environ.setdefault</code> → <strong>真实环境变量优先</strong></td></tr>
+      <tr><td>前缀策略</td><td>前缀上移到环境配置</td><td>页面类不重复声明；三态语义见 §7 R10</td></tr>
+      <tr><td>凭证缓存</td><td>进程内 + 可选磁盘复用</td><td><code>runtime/credentials.&lt;env&gt;.json</code>，默认落盘</td></tr>
     </tbody>
   </table>
 
-  <h2>四、发现清单 · 遗漏（该有而还没有）</h2>
-
+  <h3>配置项速查</h3>
   <table>
-    <thead><tr><th style="width:64px">级别</th><th style="width:26%">缺口</th><th>说明</th><th style="width:24%">落点建议</th></tr></thead>
+    <thead><tr><th>配置项</th><th>位置</th><th>dev</th><th>session</th></tr></thead>
     <tbody>
-      <tr>
-        <td><span class="chip c-hi">高</span></td>
-        <td>尚未初始化 Git 仓库</td>
-        <td>根目录没有 <code>.git</code>，但 <code>.gitignore:7</code> 已声明保护 <code>config/secrets.env</code>。在 <code>git init</code> 之前，"凭据绝不进版本库"这句保障<strong>实际尚未生效</strong>。</td>
-        <td><code>git init</code> → 首次提交前先确认 <code>git status</code> 不含 secrets.env / runtime / reports</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-hi">高</span></td>
-        <td>无 CI 配置</td>
-        <td>README 写明"退出码 0/1/2，CI 直接用"，但仓库里没有任何 workflow 文件（无 <code>.github/workflows</code>）。设计已就位，落地缺失。</td>
-        <td>加一个两阶段流水线：拉起 mock → 跑 4 套件 → 收 JSON 报告</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-hi">高</span></td>
-        <td>无环境/套件兼容性预检</td>
-        <td>同上文「不一致 ②」：建议在 <code>runner/main.py</code> 装配完 <code>factory</code> 之后，做一次套件声明账号对当前环境账号表的差集校验，不通过直接以退出码 2 结束。</td>
-        <td><code>runner/main.py:174</code> 之后</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-mid">中</span></td>
-        <td>无数据清理机制</td>
-        <td><code>teardown_case()</code> 在 5 个用例里<strong>全部未覆写</strong>（只有 <code>base_case.py:116</code> 的空实现）。mock 是内存态、重启即清，接真实环境后会持续留数据。</td>
-        <td>用例覆写 teardown，或引入"测试数据标记 + 批量回收"</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-mid">中</span></td>
-        <td>断言能力偏薄</td>
-        <td><code>core/assertions.py</code> 仅 5 个：<code>status / ok / field / faster_than / all_of</code>。缺 JSON Schema、类型与范围、数组元素级、响应头、响应体整体比对。</td>
-        <td>在 <code>assertions.py</code> 追加，保持"返回回调"的形状不变</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-mid">中</span></td>
-        <td>报告只有 JSON，无 CI 可读格式</td>
-        <td>落盘 <code>reports/report-&lt;env&gt;-&lt;suite&gt;.json</code>，无 JUnit XML / HTML，CI 侧无法直接展示失败用例与趋势。</td>
-        <td>在 runner 里加一个 JUnit XML 输出</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-mid">中</span></td>
-        <td>凭据落盘默认开启</td>
-        <td><code>config/env/session.yaml:19</code> <code>persist_credentials: true</code> → 明文会话写进 <code>runtime/credentials.session.json</code>（实测存在，2,646 字节，含 8 个账号的 Cookie 或 token）。</td>
-        <td>共享机器/CI 上设 <code>false</code>；README 已提示但默认值是反的</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-mid">中</span></td>
-        <td>报告会写出 token 前缀</td>
-        <td><code>runner/main.py:102</code> <code>preview: t.value[:8]</code> → bearer 类凭证前 8 位进报告文件。cookie 类只写 Cookie 名，相对安全。</td>
-        <td>对 token 类也改为只写长度/名称</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-low">低</span></td>
-        <td>无角色名 scheme 校验</td>
-        <td><code>role</code> 拼错不报错，静默演化为"所有接口 403"；写成列表则启动即 <code>TypeError: unhashable type: 'list'</code>（已实测）。</td>
-        <td>加载期校验 role 为 str 且在允许集合内</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-low">低</span></td>
-        <td>无并行执行 / 无用例级重跑</td>
-        <td>runner 串行 <code>for entry, case_cls in pairs</code>（<code>main.py:186-188</code>）；无 flaky 重跑。会话隔离此前用 6 线程 × 3 账号验证过，但框架自身未提供并行能力。</td>
-        <td>按账号分桶并行；或另接 pytest-xdist</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-low">低</span></td>
-        <td>无打包 / pytest 对接</td>
-        <td>无 <code>pyproject.toml</code>、<code>pytest.ini</code>、<code>conftest.py</code>，靠 <code>sys.path</code> 注入（<code>main.py:26-27</code>）运行；无法复用 pytest 生态。</td>
-        <td>补 <code>pyproject.toml</code>，或提供 pytest 适配层</td>
-      </tr>
-      <tr>
-        <td><span class="chip c-low">低</span></td>
-        <td>孤儿文件与无全量套件</td>
-        <td><code>runtime/tokens.dev.json</code> 是改名前遗留（现为 <code>credentials.&lt;env&gt;.json</code>）；4 个套件里没有"某环境全量"套件，<code>regression.yaml</code> 只含 2 个用例。</td>
-        <td>清掉遗留文件；加 <code>suites/all.session.yaml</code></td>
-      </tr>
+      <tr><td><code>base_url</code></td><td>config/env/*.yaml</td><td>http://127.0.0.1:18888</td><td>http://127.0.0.1:18889</td></tr>
+      <tr><td><code>api_prefix</code></td><td>config/env/*.yaml</td><td>/flow</td><td>/flow</td></tr>
+      <tr><td><code>accounts_file</code></td><td>config/env/*.yaml</td><td>config/roles.yaml</td><td>config/accounts.session.yaml</td></tr>
+      <tr><td><code>timeout / retries / backoff</code></td><td>config/env/*.yaml</td><td colspan="2">10s / 2 / 0.3s（两环境一致）</td></tr>
+      <tr><td><code>persist_credentials</code></td><td>config/env/*.yaml</td><td>未声明 → 默认 true</td><td>true（显式）</td></tr>
+      <tr><td><code>assume_ttl</code></td><td>账号表 auth 段</td><td colspan="2">session 表 cookie 策略 = 1800s（本地假定）</td></tr>
+      <tr><td>顶层键名</td><td>账号表</td><td><code>roles:</code></td><td><code>accounts:</code></td></tr>
     </tbody>
   </table>
 
-  <h2>五、已经做得对的地方（别改）</h2>
-  <ul>
-    <li><strong>请求出口唯一</strong>：所有 HTTP 都走 <code>HttpClient.request</code>，401 自愈、重试、超时有唯一收口点。</li>
-    <li><strong>串号的物理防线</strong>：一账号一 <code>requests.Session</code>，CookieJar 不共享；登录也强制走本账号 Session（<code>session_factory.py:188</code>）。</li>
-    <li><strong>登录请求 <code>auth=False</code></strong>：避免"取凭证 → 401 → 重登 → 再取凭证"的死循环（<code>http_client.py:125-134</code>）。</li>
-    <li><strong>兼容别名是有意为之</strong>：role→account 改名没有破坏任何旧调用，说明抽象层选对了位置。</li>
-    <li><strong>前缀三态语义清晰</strong>：<code>None / "" / "/xx"</code> 三种取值有文档、有实测、有启动告警（<code>base_api.py:29-33</code>、<code>main.py:158-165</code>）。</li>
-    <li><strong>凭据与配置分离</strong>：YAML 只写 <code>${VAR}</code>，<code>os.environ.setdefault</code> 保证 CI Secret 优先（<code>settings.py:46</code>）。</li>
-  </ul>
+  <h2>七、项目已定义的规则与约定（逐条）</h2>
 
-  <h2>六、建议的处理顺序</h2>
+  <p>下表把散落在 README、docs 与代码注释里的规则<strong>逐条抽出并编号</strong>，后续 §8 按编号比对预期。出处已标到文件行号。</p>
+
   <table>
-    <thead><tr><th style="width:70px">优先级</th><th>动作</th><th>涉及文件</th></tr></thead>
+    <thead><tr><th>编号</th><th>规则 / 约定</th><th>出处</th></tr></thead>
     <tbody>
-      <tr><td><span class="chip c-hi">P0</span></td><td>让 dev mock 也从 <code>secrets.env</code> 读账号口令，消除第二份明文凭据</td><td class="path">tools/mock_server.py:21-25</td></tr>
-      <tr><td><span class="chip c-hi">P0</span></td><td>加套件 × 环境的账号预检，不通过即退出码 2</td><td class="path">runner/main.py</td></tr>
-      <tr><td><span class="chip c-hi">P0</span></td><td><code>git init</code>，并核验首次提交不含凭据与运行产物</td><td class="path">.gitignore</td></tr>
-      <tr><td><span class="chip c-mid">P1</span></td><td>统一授权口径（<code>_require</code> 与 <code>/me</code> 同源）与索引键（条目名 == username 做断言）</td><td class="path">tools/mock_server_session.py</td></tr>
-      <tr><td><span class="chip c-mid">P1</span></td><td>同步 README：目录结构、约定 2 示例、账号清单、字段名（account 而非 role）</td><td class="path">README.md</td></tr>
-      <tr><td><span class="chip c-mid">P1</span></td><td>CI 流水线 + JUnit XML 输出；<code>persist_credentials</code> 在 CI 置 false</td><td class="path">runner/main.py · config/env/*.yaml</td></tr>
-      <tr><td><span class="chip c-low">P2</span></td><td>加载期 role 校验、清掉遗留别名与孤儿文件、补 teardown 清理、扩充断言</td><td class="path">config/settings.py · cases/*</td></tr>
+      <tr><td>R1</td><td>一页面类一文件、一接口一方法：<code>xxx_page.py</code> / <code>XxxPageApi</code></td><td>base_api.py:4,17 · apply_page.py:17</td></tr>
+      <tr><td>R2</td><td>账号是登录单位与索引维度；角色是账号的业务权限属性（以账号为主）</td><td>settings.py:8-11 · accounts.session.yaml:7-10</td></tr>
+      <tr><td>R3</td><td>页面类用 <code>account</code> 声明默认账号；旧写法 <code>role</code> 在 account 未指定时生效</td><td>base_api.py:6,26-27</td></tr>
+      <tr><td>R4</td><td>方法体里<strong>禁止任何凭证代码</strong>；鉴权由 BaseApi.__init__ 自动挂好</td><td>base_api.py:7-8,46</td></tr>
+      <tr><td>R5</td><td>换账号用 <code>as_account()</code>（返回新实例），绝不改全局状态</td><td>base_api.py:9-10,54-56 · README 约定 3</td></tr>
+      <tr><td>R6</td><td>一条用例 = 一条业务流程；生命周期 setup → test_01… → teardown</td><td>base_case.py:1-8</td></tr>
+      <tr><td>R7</td><td>步骤执行顺序 = 方法名<strong>字典序</strong>，用 <code>test_01_</code> 前缀控制先后</td><td>base_case.py:121-125 · README §四</td></tr>
+      <tr><td>R8</td><td>单个步骤失败<strong>不中断</strong>整条流程，结果全部进 CaseResult</td><td>base_case.py:7-8,136-137</td></tr>
+      <tr><td>R9</td><td>用例之间顺序由 suites/*.yaml 的列表顺序决定</td><td>runner/main.py:186-188 · README §四</td></tr>
+      <tr><td>R10</td><td>URL 前缀三态：未声明→取环境 <code>api_prefix</code>；<code>""</code>→无前缀；<code>"/xx"</code>→类自带且<strong>优先级最高、不叠加环境前缀</strong></td><td>base_api.py:29-33,43-44 · README §十</td></tr>
+      <tr><td>R11</td><td>凭证只有两个入口：本地 secrets.env、CI 真实环境变量；账号表只写 <code>${VAR}</code> 不写明文</td><td>README 约定 5 · settings.py:29-48</td></tr>
+      <tr><td>R12</td><td>真实环境变量<strong>优先</strong>于文件（<code>setdefault</code>），CI Secret 不被本地文件覆盖</td><td>settings.py:32,46</td></tr>
+      <tr><td>R13</td><td>跨接口传数据用 <code>${var}</code>，支持 <code>${a.b.c}</code> 点号路径，缺失直接抛 FrameworkError</td><td>context.py:84-105 · README 约定 6</td></tr>
+      <tr><td>R14</td><td>401 → 作废本人会话 → 重新登录 → 重发一次；<strong>上限每请求恰好 1 次</strong>，由 <code>auth_retried</code> 独立保证</td><td>http_client.py:75-79,130-150 · README 补充规则</td></tr>
+      <tr><td>R15</td><td>游客（none）/ <code>auth=False</code> 请求收到 401 <strong>不重登</strong>（避免递归与无意义重建）</td><td>http_client.py:138-141</td></tr>
+      <tr><td>R16</td><td><strong>403 不触发自愈</strong>：403 = 已认证但无权访问，重登会作废有效会话并污染证据链</td><td>README 补充规则 · 本轮实测</td></tr>
+      <tr><td>R17</td><td>重登只作废<strong>本人</strong>的 Session 与凭证缓存，其它账号不受影响</td><td>session_factory.py:16-17,150-157</td></tr>
+      <tr><td>R18</td><td>登录必须发生在该账号<strong>自己的</strong> Session 上，且 <code>auth=False</code>（Set-Cookie 才落对 Jar）</td><td>session_factory.py:11-14,186-188</td></tr>
+      <tr><td>R19</td><td>一个环境下一个账号只存一份凭证快照；凭证未过期则<strong>复用</strong>，过期/缺失才登录</td><td>token_store.py:5-6,76-81 · session_factory.py:97-118</td></tr>
+      <tr><td>R20</td><td>凭证落盘只是「复用」不是「可信来源」；删除 <code>runtime/</code> 也能正常跑</td><td>token_store.py:10 · README 约定 4</td></tr>
+      <tr><td>R21</td><td>新增鉴权方式只需：继承 AuthStrategy + <code>@register</code>，框架其它代码零改动</td><td>auth/registry.py:1-7</td></tr>
+      <tr><td>R22</td><td>环境配置 / 账号表 / 凭据<strong>三类文件分工固定</strong>，账号表路径由环境文件指定</td><td>settings.py:3-6,114-115</td></tr>
+      <tr><td>R23</td><td>扩展真实接口只改页面类两处（path/入参、account），用例层零改动</td><td>apply_page.py:5-7 · README §九</td></tr>
+      <tr><td>R24</td><td>工具脚本装配链路必须与 runner/main.py 同源，保证结果一致性</td><td>tools/hit.py · tools/repeat_case.py</td></tr>
+      <tr><td>R25</td><td>退出码约定：0 全通过 / 1 有失败 / 2 框架级错误</td><td>runner/main.py:197-205</td></tr>
+      <tr><td>R26</td><td><code>runtime/</code>、<code>reports/</code>、<code>config/secrets.env</code> 必须进 .gitignore</td><td>.gitignore</td></tr>
     </tbody>
   </table>
 
-  <div class="note">
-    <strong>不确定项（需要你确认）：</strong>以上全部基于本仓库自身，不包含你们现行真实项目的代码。若真实项目与下列假设不符，结论需要修正 ——
-    ① 账号是否真的一个账号只对应一个角色？
-    ② 真实系统里同一账号是否会在不同环境用不同用户名？
-    ③ 8 个页面的实际操作账号是否就是 test1 / test34 / test38 / test666？
-    ④ 真实接口的 URL 公共前缀是否各环境一致（决定 <code>api_prefix</code> 放环境配置还是应用常量）？
+  <h2>八、规则 × 你的预期：一致性对照（核心）</h2>
+
+  <div class="legend">
+    <span><span class="sw" style="background:#0f6e56"></span>一致</span>
+    <span><span class="sw" style="background:#854f0b"></span>部分偏离</span>
+    <span><span class="sw" style="background:#a32d2d"></span>偏离 / 未落地</span>
   </div>
 
+  <table>
+    <thead><tr><th>你的预期</th><th>框架现状</th><th>判定</th><th>差异点与影响</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>E1</strong> 面向页面：一页面类一文件、一接口一方法</td>
+        <td>R1 完整落地：8 个 <code>*_page.py</code> + 6 个业务域 API，方法名即接口名</td>
+        <td><span class="chip c-ok">一致</span></td>
+        <td>无偏离。接真实接口时只改页面类的 path/入参/account，用例层不动（R23）。</td>
+      </tr>
+      <tr>
+        <td><strong>E2</strong> 以账号为主、角色自动展示</td>
+        <td>R2/R3：账号为索引维度与登录单位，角色是它的属性字段</td>
+        <td><span class="chip c-mid">部分偏离</span></td>
+        <td>
+          <strong>① 「角色自动展示」只在「1 账号 : 1 角色」时成立。</strong>当前 12 个账号全部满足，所以看不到问题；一旦出现「一个账号多个角色」：<code>SessionFactory._clients</code> 按<strong>账号</strong>缓存，无法表达多角色，越权断言会<strong>静默失真</strong>（比报错危险）；mock 侧账号表若 value 写成 list，直接 <code>TypeError: unhashable type: 'list'</code>。<br>
+          <strong>② 旧名双口径仍在：</strong><code>roles.yaml</code> 顶层用 <code>roles:</code>、<code>BaseApi.role = "guest"</code> 作默认值、<code>as_role()</code>、<code>ctx.available_roles</code>、<code>load_roles</code>、<code>Settings.roles_file</code> 全部保留兼容。<br>
+          <strong>影响：</strong>「以账号为主」已经做到，但「角色」在代码里同时是<em>账号别名</em>和<em>权限属性</em>两种含义，阅读与排查时容易误判；<code>dev</code> 表的键名还是 <code>roles:</code>，与 session 表的 <code>accounts:</code> 不统一。
+        </td>
+      </tr>
+      <tr>
+        <td><strong>E3</strong> 链式调用 <code>登录方法().接口方法()</code></td>
+        <td>未实现。现有等价能力：<code>self.api(PageCls, account="x")</code> 与 <code>BaseApi.as_account()</code></td>
+        <td><span class="chip c-hi">偏离（未采用）</span></td>
+        <td>
+          <strong>① 结构冲突：</strong>链式要求接口方法返回「可继续链式的句柄」，而页面方法返回的是 <code>ApiResponse</code>（数据终结符）。要支持链式得让页面方法回传会话句柄，直接破坏 R1「一接口一方法」的返回语义。<br>
+          <strong>② 语义风险（最需要警惕）：</strong><code>self.login("test1").submit_expert_review()</code> 能跑通且<strong>可能全绿</strong> —— 用创建人账号执行了评审动作，绕过四眼隔离。框架的 <code>self.api(P, account=…)</code> 让身份显式，反而更容易被 review 发现。<br>
+          <strong>结论：</strong>套件主体维持 A 方案（<code>self.api(P)</code>）+ B 方案（显式换账号）；链式最多留给一次性探针，不要进用例。
+        </td>
+      </tr>
+      <tr>
+        <td><strong>E4</strong> 鉴权失败自动重登并重试原调用</td>
+        <td>R14~R18 已实现；本轮另修掉一个计数缺陷（<code>attempt == 1</code> → 独立 <code>auth_retried</code>）</td>
+        <td><span class="chip c-ok">一致</span></td>
+        <td>
+          实现位置 <span class="path">core/http_client.py:130-150</span>，上限严格为每请求 1 次。<br>
+          <strong>唯一偏离：</strong>你最初描述的状态码是 <strong>403</strong>。框架<strong>明确不做 403 自愈</strong>（R16）—— 本项目 403 承载「已认证但无权访问」，6 处 <code>account_roles_case</code> 越权断言 + <code>order_flow_case</code> test_05 + <code>multi_account</code> test_07/08 都依赖它。<br>
+          <strong>影响：</strong>若真实后端用 403 表达「会话失效」，自愈<strong>不会触发</strong>，用例会直接收到 403 失败。正确做法是让后端把「失效」统一用 401 表达，而不是把框架所有 403 当过期。
+        </td>
+      </tr>
+      <tr>
+        <td><strong>E5</strong> 凭证没过期就继续复用（不重建会话）</td>
+        <td>R19：<code>TokenStore.get()</code> 命中未过期凭证即复用；<code>_restore()</code> 把落盘 Cookie 灌回 Jar</td>
+        <td><span class="chip c-mid">部分偏离</span></td>
+        <td>
+          <strong>核心差异：判定「过期」用的是本地假定值，不是服务端真实过期时间。</strong>
+          <ul>
+            <li>cookie 账号：<code>assume_ttl: 1800</code>（写死 30 分钟，accounts.session.yaml:26），注释自陈「真实过期靠 401 兜底」</li>
+            <li>token 账号：用登录响应的 <code>expires_in</code>，缺失时 <code>default=3600</code>（auth/base.py:94）</li>
+            <li>另有 30 秒安全边际，<code>is_valid()</code> 提前 30s 判定失效（token_store.py:43-47）</li>
+          </ul>
+          <strong>影响：</strong>① 服务端会话 &lt; 30 分钟 → 本地误判有效，<strong>必先失败一次 401 才兜底</strong>（每次起新进程都可能多一次往返）；② 服务端会话 &gt; 30 分钟 → 本地到点即作废，<strong>多余重登一次</strong>，正好违背「没过期就继续复用」；③ <code>persist_credentials: true</code> 会把<strong>整份 CookieJar 明文</strong>落盘并跨进程复用，可能复用一个已被服务端作废的会话。<br>
+          <strong>建议：</strong>让登录响应返回真实 <code>expires_in</code>（cookie 策略也读），或把 <code>assume_ttl</code> 设成明显小于服务端最短会话时长。
+        </td>
+      </tr>
+      <tr>
+        <td><strong>E6</strong> 性能造数：对接真实环境（不 mock）、上万笔、每环节只到 FAE 汇总</td>
+        <td>尚未落地。框架侧存在 3 个硬缺口，见右列</td>
+        <td><span class="chip c-hi">偏离（阻塞）</span></td>
+        <td>
+          <strong>① 无删除能力（最严重）：</strong><code>BaseApi.delete()</code> 只是管道（base_api.py:78-79），<strong>14 个页面类无一暴露删除方法</strong>，两个 mock 也<strong>只有 GET/POST/PUT，没有 DELETE 路由</strong> → 造完的数据<strong>无法通过接口回收</strong>，真实环境会留下 1~3 万笔脏单。<br>
+          <strong>② 无环境预检：</strong>环境与套件/页面类隐式耦合（§2.2），接真实环境若只改 <code>base_url</code> 不改账号表，报错发生在首次构造页面对象时（<code>RoleNotDefined</code>），而不是启动即失败。<br>
+          <strong>③ 无回收钩子：</strong>5 个用例<strong>全部没有覆写 <code>teardown_case()</code></strong>（只有 base_case 里的空实现）→ R6 里「teardown 清理数据」这条约定实际形同虚设。<br>
+          <strong>另需注意：</strong>报告会把凭证前 8 位写进 JSON（runner/main.py:102），接真实环境后 <code>reports/</code> 里会出现真实 token 片段；<code>title</code> 是否有唯一约束、环节是否有通知/工单副作用，都必须在真实环境确认后才能开跑。
+        </td>
+      </tr>
+      <tr>
+        <td><strong>E7</strong> 单接口联调：能单独验证某个接口是否生效</td>
+        <td><code>tools/hit.py</code>（571 行）：<code>--list</code> / <code>--api 类.方法</code> / <code>--raw</code> / <code>--account</code> / <code>--no-auth</code> / <code>--expect*</code> / <code>--save</code></td>
+        <td><span class="chip c-ok">一致</span></td>
+        <td>无偏离。退出码与 R24/R25 一致；手册见 <span class="path">docs/单接口联调手册.md</span>。</td>
+      </tr>
+      <tr>
+        <td><strong>E8</strong> 重复执行某用例 1 万次并统计成败</td>
+        <td><code>tools/repeat_case.py</code>（327 行）：装配链路与 runner 同源，循环内只登录一次，失败原因按「步骤 + 归一化原因」聚合</td>
+        <td><span class="chip c-ok">一致</span></td>
+        <td>无偏离。自测：成功路径 50/50（349 次/秒、单次 2.85ms）；失败路径正确聚合且退出码 1。注意每条记录都会真实产业务数据，与 E6 的清理问题是同一个坑。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>8.2 附带发现：与直觉不符的既有规则（非你的需求，但影响使用）</h3>
+  <table>
+    <thead><tr><th>规则</th><th>直觉预期</th><th>实际行为</th><th>影响</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>R7 步骤顺序</td><td>按代码中的声明顺序执行</td><td>按方法名<strong>字典序</strong></td>
+        <td><code>test_10_</code> 会排在 <code>test_2_</code> 前面 → 必须补零写成 <code>test_02_</code>，否则流程乱序</td>
+      </tr>
+      <tr>
+        <td>R10 前缀三态</td><td>类自带前缀 + 环境前缀「拼接」</td><td>类自带前缀<strong>优先级最高、不叠加</strong></td>
+        <td>页面写 <code>prefix="/xx"</code> 时环境 <code>api_prefix</code> 直接失效；<code>OrderApi</code> 就是这样绕过 <code>/flow</code> 的</td>
+      </tr>
+      <tr>
+        <td>R12 变量优先级</td><td>secrets.env 文件值优先（本地覆盖 CI）</td><td>真实环境变量<strong>优先</strong>，文件值被静默忽略</td>
+        <td>CI/本机残留同名环境变量时，「改了 secrets.env 却没生效」，且无任何提示</td>
+      </tr>
+      <tr>
+        <td>R22 账号表键名</td><td>键名由配置决定</td><td><code>accounts:</code> / <code>roles:</code> <strong>硬编码</strong>在 settings.py:131</td>
+        <td>改键名（如 <code>users:</code>）必须同时改代码，属于配置无法覆盖的隐式约定</td>
+      </tr>
+      <tr>
+        <td>R26 报告内容</td><td>报告不含凭证</td><td>写 token 前 8 位 + Cookie 名清单（main.py:97-108）</td>
+        <td>与「凭据只有两个入口」的收敛意图冲突；真实环境下 reports/ 会留下凭证片段</td>
+      </tr>
+      <tr>
+        <td>— 环境预检</td><td>环境与套件应互相校验</td><td>无任何预检，隐式耦合</td>
+        <td><code>--env session --suite regression</code> 0/2 全红，看起来像框架 bug，实际是配置错配</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>九、建议处理顺序</h2>
+
+  <ol>
+    <li><strong>接真实环境前先补删除能力（E6-①）。</strong>在页面类按真实接口补 <code>delete_*</code> 方法，或提供「按 title 前缀批量清理」的运维脚本 —— 否则 1 万次重复执行/造数会把真实环境搞脏且不可逆。</li>
+    <li><strong>加环境预检（E6-②）。</strong>启动时校验「本环境账号表 ⊇ 套件涉及的页面类所声明的 account」，不满足直接退出码 2 并指明缺哪个账号。</li>
+    <li><strong>补 teardown_case 覆写（E6-③）。</strong>让 R6 的清理约定真正生效。</li>
+    <li><strong>收敛凭证落盘（E5-③）。</strong>真实环境把 <code>persist_credentials</code> 置 false；报告里的凭证片段改成固定掩码（如 <code>***</code>）。</li>
+    <li><strong>统一角色口径（E2-②）。</strong>把 <code>roles.yaml</code> 顶层改成 <code>accounts:</code>，明确 <code>as_role()</code>/<code>ctx.available_roles</code> 等旧名是待移除的兼容层而非并列概念。</li>
+    <li><strong>对齐 403 语义（E4）。</strong>与后端确认「会话失效」统一返回 401；否则 E4 的自愈在真实环境形同虚设。</li>
+    <li><strong>让 cookie 会话拿到真实 TTL（E5）。</strong>登录响应返回 <code>expires_in</code>，去掉 <code>assume_ttl</code> 的乐观假设。</li>
+  </ol>
+
   <footer>
-    生成于 2026-10-14 · 数据来源：仓库实测（57 个文件 / 5,275 行）+ 双向交叉运行验证 · 所有结论均可用文中给出的命令与 file:line 复核
+    本文档所有数字与行号均以 2026-10-14 的工作区实测为准（HEAD <code>521ed1e</code>）：core 1,228 行 / apis 561 行 / cases 746 行 / config 178 行 / runner 206 行 / tools 1,893 行。
+    「部署到真实环境」前的三项确认（清理路径、title 唯一约束、环节副作用）仍未完成，E6 因此保持阻塞状态。
   </footer>
 
 </div>
