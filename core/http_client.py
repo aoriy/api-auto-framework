@@ -72,6 +72,11 @@ class HttpClient:
         url = path if raw_url else self._join(path)
         method = method.upper()
         attempt = 0
+        # 401 自愈在本次请求的整个生命周期内只允许触发一次，防止凭证配置错误时
+        # 「重登 → 又 401 → 再重登」死循环。用**独立标志**而不是 attempt 计数：
+        # attempt 同时被网络异常重试与 5xx 重试递增，只要前面发生过一次网络抖动，
+        # attempt 就不再是 1，此时收到的 401 会被静默漏掉自愈（表现为偶发 401 直接失败）。
+        auth_retried = False
 
         while True:
             attempt += 1
@@ -122,16 +127,34 @@ class HttpClient:
                                 "headers": send_headers},
             )
 
-            # 401 只重登一次，避免凭证配置错误时死循环。
-            # 只有「本来就要凭证」的账号才值得重登：
-            # 游客（none）或 Basic 账号收到 401 是权限/配置问题，重登没意义。
-            if (raw.status_code == 401 and auth and attempt == 1
-                    and self._on_unauthorized and self._strategy is not None
+            # ---- 鉴权失败自愈：401 → 作废本人会话 → 重新登录 → 原样重发一次 ----
+            # 触发条件（四个都要满足）：
+            #   1) 状态码 401（服务端明确表示「未认证 / 凭证不可用」）
+            #   2) auth=True（登录请求本身走 auth=False，不会递归）
+            #   3) 本次请求尚未自愈过（auth_retried）
+            #   4) 该账号本来就要凭证（requires_credential）
+            #      —— 游客(none)/Basic 收到 401 是权限或配置问题，重登没有意义，
+            #         这与「最小权限」原则一致：不该给不带凭证的账号凭空建会话。
+            if (raw.status_code == 401 and auth and not auth_retried
+                    and self._on_unauthorized is not None
+                    and self._strategy is not None
                     and self._strategy.requires_credential):
+                auth_retried = True
                 if self.log:
-                    self.log.warning("账号 %s 收到 401，作废本人会话后重试一次", self.account)
+                    self.log.warning("账号 %s 收到 401，作废本人会话后重新登录并重发一次",
+                                     self.account)
+                # _renew() 只作废该账号自己的缓存与 CookieJar，其它账号会话不受影响。
+                # 它内部抛 AuthError 时直接向上冒泡 —— 登录本身就失败，说明口令或
+                # 账号状态有问题，此时暴露真因比留着一个 401 更有用。
                 self._on_unauthorized()
                 continue
+
+            # 重登之后仍是 401：不再重试，把 401 原样交给上层（用例断言 / 联调工具），
+            # 但留一条 warning，避免「登录其实一直失败」被 401 表象掩盖。
+            if auth_retried and raw.status_code == 401 and self.log:
+                self.log.warning("账号 %s 重新登录后仍收到 401，不再重试：请检查口令、"
+                                 "账号状态或凭证缓存（可加 --fresh-token 排除脏缓存）",
+                                 self.account)
 
             if raw.status_code >= 500 and attempt <= self.retries:
                 self._wait(attempt, f"服务端 {raw.status_code}")
